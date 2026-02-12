@@ -11,6 +11,6 @@ data class User(
     val passwordHash: String,
     val role: UserRole,
     val active: Boolean = true,
-    val createdAt: Instant? = null,
-    val updatedAt: Instant? = null
+    val createdAt: Instant = Instant.now(),
+    val updatedAt: Instant = Instant.now()
 )
