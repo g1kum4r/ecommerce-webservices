@@ -6,20 +6,23 @@
 
 ## Quick Reference
 
-**Project Type**: Spring Boot 4.0.2 + Kotlin 2.2.21 | **Architecture**: Modular Monolith (Spring Modulith)
-**Database**: PostgreSQL (JDBC) + Liquibase | **Cache**: Redis | **Auth**: JWT + BCrypt | **Build**: Gradle 9.3.0
+**Project Type**: Spring Boot 4.0.2 + Kotlin 2.2.21 | **Architecture**: Modular Monolith (Spring Modulith-ready)
+**Database**: PostgreSQL 16 (JDBC) + Liquibase 5.0.1 | **Cache**: Redis 7 | **Auth**: JWT + OAuth2 + BCrypt | **Build**: Gradle 9.3.0
 
 ### Critical File Locations
 ```
-Controllers:    src/main/kotlin/lakho/ecommerce/webservices/{module}/api/
-Services:       src/main/kotlin/lakho/ecommerce/webservices/{module}/services/
-Repositories:   src/main/kotlin/lakho/ecommerce/webservices/{module}/repositories/
-Entities:       src/main/kotlin/lakho/ecommerce/webservices/{module}/repositories/entities/
-Security:       src/main/kotlin/lakho/ecommerce/webservices/config/SecurityConfig.kt
-JWT Filter:     src/main/kotlin/lakho/ecommerce/webservices/config/JwtAuthenticationFilter.kt
-Migrations:     src/main/resources/db/changelog/
-Config:         src/main/resources/application.properties
-Environment:    .env (use .env.example as template)
+Controllers:     src/main/kotlin/lakho/ecommerce/webservices/{module}/api/
+Services:        src/main/kotlin/lakho/ecommerce/webservices/{module}/services/
+Repositories:    src/main/kotlin/lakho/ecommerce/webservices/{module}/repositories/
+Entities:        src/main/kotlin/lakho/ecommerce/webservices/{module}/repositories/entities/
+Security:        src/main/kotlin/lakho/ecommerce/webservices/config/SecurityConfig.kt
+JWT Filter:      src/main/kotlin/lakho/ecommerce/webservices/config/JwtAuthenticationFilter.kt
+Exception:       src/main/kotlin/lakho/ecommerce/webservices/config/GlobalExceptionHandler.kt
+OpenAPI:         src/main/kotlin/lakho/ecommerce/webservices/config/OpenApiConfiguration.kt
+Migrations:      src/main/resources/db/changelog/
+Config:          src/main/resources/application.properties
+Environment:     .env (use .env.example as template)
+Docker:          docker-compose.yml
 ```
 
 ---
@@ -33,6 +36,7 @@ Environment:    .env (use .env.example as template)
 | Keyword | Module | Files to Check |
 |---------|--------|----------------|
 | "login", "register", "token", "JWT" | `auth` | `AuthController.kt`, `JwtService.kt`, `AuthService.kt` |
+| "OAuth2", "Google login", "social login" | `auth` + `config` | `OAuth2AuthenticationSuccessHandler.kt`, `SecurityConfig.kt` |
 | "user", "password", "profile" | `user` | `User.kt`, `UserRepository.kt`, `UserService.kt` |
 | "role", "permission", "access" | `user` + `config` | `Role.kt`, `UserRole.kt`, `SecurityConfig.kt` |
 | "admin" | `admin` | `AdminController.kt`, `AdminService.kt` |
@@ -42,6 +46,8 @@ Environment:    .env (use .env.example as template)
 | "business logic", "service" | Layer: `services/` | `{Module}Service.kt` |
 | "database", "table", "query" | Layer: `repositories/` + migrations | Entity files + SQL migrations |
 | "authentication", "authorization" | Security | `SecurityConfig.kt`, `JwtAuthenticationFilter.kt` |
+| "exception", "error handling" | Config | `GlobalExceptionHandler.kt` |
+| "Swagger", "OpenAPI", "API docs" | Config | `OpenApiConfiguration.kt` |
 
 ### Response Strategy by Query Type
 
@@ -177,26 +183,44 @@ lakho.ecommerce.webservices/
 
 ```
 1. Registration: POST /api/auth/register
-   → AuthController → AuthService.register()
-   → Creates User with hashed password (BCrypt)
-   → Assigns roles (ADMIN/STORE/CONSUMER)
+   → AuthController.register()
+   → AuthService.register(RegisterRequest)
+   → UserService creates User with hashed password (BCrypt)
+   → RoleService assigns roles (ADMIN/STORE/CONSUMER)
+   → JwtService.generateTokens()
+   → Returns: AuthResponse { accessToken, refreshToken }
 
 2. Login: POST /api/auth/login
-   → AuthController → AuthService.login()
-   → Validates password → JwtService.generateTokens()
-   → Returns: { accessToken: "...", refreshToken: "..." }
+   → AuthController.login()
+   → AuthService.login(LoginRequest)
+   → AuthenticationManager validates password
+   → JwtService.generateTokens()
+   → Returns: AuthResponse { accessToken, refreshToken }
 
 3. Authenticated Request: GET /api/admin/users
    → JwtAuthenticationFilter.doFilterInternal()
    → Extracts "Authorization: Bearer {token}"
    → JwtService.validateToken() + extractUsername()
-   → Sets Spring SecurityContext with authorities
+   → CustomUserDetailsService loads user with roles
+   → Sets Spring SecurityContext with authorities (ROLE_ADMIN)
    → SecurityConfig checks: hasRole("ADMIN")
-   → AdminController.getUsers() executes
+   → AdminController.listUsers() executes
 
 4. Token Refresh: POST /api/auth/refresh
-   → AuthController → JwtService.refreshAccessToken()
-   → Validates refreshToken → Issues new accessToken
+   → AuthController.refresh()
+   → AuthService.refresh(RefreshRequest)
+   → JwtService validates refreshToken
+   → Issues new accessToken (refreshToken remains valid)
+   → Returns: AuthResponse { accessToken, refreshToken }
+
+5. OAuth2 Login (Google): GET /oauth2/authorization/google
+   → Spring Security redirects to Google
+   → User authenticates with Google
+   → Callback: /login/oauth2/code/google
+   → OAuth2AuthenticationSuccessHandler.onAuthenticationSuccess()
+   → Creates or loads User, assigns CONSUMER role (default)
+   → JwtService.generateTokens()
+   → Redirects with tokens (frontend handles storage)
 ```
 
 ### Role-Based Authorization
@@ -218,13 +242,39 @@ user_roles (user_id UUID, role_id INTEGER)  # Many-to-many junction table
 
 **SecurityConfig Pattern:**
 ```kotlin
+// Location: src/main/kotlin/lakho/ecommerce/webservices/config/SecurityConfig.kt
 .authorizeHttpRequests {
     it
-        .requestMatchers("/api/auth/**").permitAll()                 // Public
-        .requestMatchers("/api/admin/**").hasRole("ADMIN")          // Admin only
-        .requestMatchers("/api/store/**").hasRole("STORE")          // Store only
-        .requestMatchers("/api/consumer/**").hasRole("CONSUMER")    // Consumer only
+        .requestMatchers("/api/auth/**", "/login/**", "/oauth2/**").permitAll()  // Public
+        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+        .requestMatchers("/api/admin/**").hasRole("ADMIN")           // Admin only
+        .requestMatchers("/api/store/**").hasRole("STORE")           // Store only
+        .requestMatchers("/api/consumer/**").hasRole("CONSUMER")     // Consumer only
         .anyRequest().authenticated()                                // All others require auth
+}
+.oauth2Login { oauth2 ->
+    oauth2
+        .successHandler(oauth2SuccessHandler)
+        .failureUrl("/login?error=true")
+}
+.addFilterBefore(
+    JwtAuthenticationFilter(jwtService),
+    UsernamePasswordAuthenticationFilter::class.java
+)
+```
+
+**Security Headers (OWASP Best Practices):**
+```kotlin
+.headers { headers ->
+    headers
+        .xssProtection { xss -> xss.headerValue(HeaderValue.ENABLED_MODE_BLOCK) }
+        .contentSecurityPolicy { csp -> csp.policyDirectives("default-src 'self'") }
+        .frameOptions { frame -> frame.deny() }
+        .httpStrictTransportSecurity { hsts ->
+            hsts.maxAgeInSeconds(31536000)
+                .includeSubDomains(true)
+                .preload(true)
+        }
 }
 ```
 
@@ -647,25 +697,34 @@ INSERT INTO roles (name) VALUES ('MODERATOR');
 ### Required Environment Variables (.env)
 
 ```properties
-# Database (PostgreSQL)
+# Database (PostgreSQL 16)
 DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=ecommerce
 DB_USER=postgres
 DB_PASSWORD=postgres
 
-# Redis
+# Redis 7
 REDIS_HOST=localhost
 REDIS_PORT=6379
 
-# JWT (CRITICAL - Must be same for all instances)
+# JWT (CRITICAL - Must be same for all instances, use strong secret in production)
 JWT_SECRET=supersecretkeythatshouldbeatleast256bitslong1234567890abcdef
 JWT_ACCESS_TOKEN_EXPIRATION_MS=900000         # 15 minutes
-JWT_REFRESH_TOKEN_EXPIRATION_MS=604800000     # 7 days (7 * 24 * 60 * 60 * 1000)
+JWT_REFRESH_TOKEN_EXPIRATION_MS=604800000     # 7 days
 
 # Application
 SPRING_PROFILES_ACTIVE=dev
 SERVER_PORT=8080
+
+# OpenAPI / Swagger
+SPRINGDOC_API_DOCS_PATH=/v3/api-docs
+SPRINGDOC_SWAGGER_UI_PATH=/swagger-ui.html
+
+# OAuth2 Google (optional - get from https://console.cloud.google.com)
+GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your-client-secret
+OAUTH2_REDIRECT_URI=http://localhost:8080/login/oauth2/code/google
 ```
 
 ### Running the Application
@@ -757,11 +816,14 @@ docker-compose up -d
 ### Public Endpoints (No Auth Required)
 
 ```
-POST   /api/auth/register       # Register new user with roles
-POST   /api/auth/login          # Login (returns access + refresh tokens)
-POST   /api/auth/refresh        # Refresh access token using refresh token
-GET    /v3/api-docs/**          # OpenAPI JSON/YAML
-GET    /swagger-ui/**           # Swagger UI
+POST   /api/auth/register                # Register new user with roles
+POST   /api/auth/login                   # Login (returns access + refresh tokens)
+POST   /api/auth/refresh                 # Refresh access token using refresh token
+GET    /oauth2/authorization/google      # Initiate Google OAuth2 login flow
+GET    /login/oauth2/code/google         # OAuth2 callback (handled automatically)
+GET    /v3/api-docs/**                   # OpenAPI JSON/YAML
+GET    /swagger-ui/**                    # Swagger UI
+GET    /swagger-ui.html                  # Swagger UI entry point
 ```
 
 ### Protected Endpoints (Require Authentication + Role)
@@ -769,9 +831,9 @@ GET    /swagger-ui/**           # Swagger UI
 ```
 # Admin Only
 GET    /api/admin/users?page=0&size=10           # List all users (paginated)
-GET    /api/admin/users/{id}                      # Get user by UUID
-GET    /api/admin/consumers?page=0&size=10        # List consumers (paginated)
-GET    /api/admin/stores?page=0&size=10           # List stores (paginated)
+GET    /api/admin/users/{id}                     # Get user by UUID
+GET    /api/admin/consumers?page=0&size=10       # List consumers (paginated)
+GET    /api/admin/stores?page=0&size=10          # List stores (paginated)
 
 # Store Only
 GET    /api/store/profile       # Get authenticated store's profile
@@ -785,6 +847,7 @@ GET    /api/consumer/profile    # Get authenticated consumer's profile
 - **Username**: admin
 - **Password**: admin123
 - **Role**: ADMIN
+- **Location**: `src/main/resources/db/changelog/v1.0.0/user/seed-admin-user.sql`
 
 **Request Format:**
 ```http
@@ -838,11 +901,14 @@ class AuthControllerTest {
 
 ```kotlin
 // Spring Boot Starters
-implementation("org.springframework.boot:spring-boot-starter-webmvc")       // REST API
-implementation("org.springframework.boot:spring-boot-starter-security")     // Authentication
-implementation("org.springframework.boot:spring-boot-starter-data-jdbc")    // Database
-implementation("org.springframework.boot:spring-boot-starter-data-redis")   // Cache
-implementation("org.springframework.boot:spring-boot-starter-liquibase")    // Migrations
+implementation("org.springframework.boot:spring-boot-starter-webmvc")        // REST API
+implementation("org.springframework.boot:spring-boot-starter-security")      // Authentication
+implementation("org.springframework.boot:spring-boot-starter-oauth2-client") // OAuth2 (Google)
+implementation("org.springframework.boot:spring-boot-starter-data-jdbc")     // Database
+implementation("org.springframework.boot:spring-boot-starter-liquibase")     // Migrations
+implementation("org.springframework.boot:spring-boot-starter-actuator")      // Metrics/Health
+implementation("org.springframework.boot:spring-boot-starter-validation")    // Bean Validation
+implementation("org.springframework.boot:spring-boot-starter-websocket")     // WebSocket support
 
 // JWT
 implementation("io.jsonwebtoken:jjwt-api:0.12.6")
@@ -859,8 +925,16 @@ implementation("org.postgresql:postgresql")
 implementation("org.jetbrains.kotlin:kotlin-reflect")
 implementation("tools.jackson.module:jackson-module-kotlin")
 
-// Environment
+// Environment & Development
 implementation("me.paulschwarz:spring-dotenv:4.0.0")
+developmentOnly("org.springframework.boot:spring-boot-devtools")
+
+// Testing
+testImplementation("org.springframework.boot:spring-boot-starter-test")
+testImplementation("org.springframework.boot:spring-boot-starter-security-test")
+testImplementation("org.springframework.boot:spring-boot-testcontainers")
+testImplementation("org.testcontainers:testcontainers-postgresql")
+testImplementation("org.springframework.restdocs:spring-restdocs-mockmvc")
 ```
 
 ---
