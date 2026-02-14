@@ -1,0 +1,22 @@
+databaseChangeLog:
+  - changeSet:
+      id: "authentications-tables.v1"
+      author: "G1"
+      failOnError: true
+      runOnChange: true
+      changes:
+        - sqlFile:
+            path: create-users-table.sql
+            relativeToChangelogFile: true
+        - sqlFile:
+            path: create-roles-table.sql
+            relativeToChangelogFile: true
+        - sqlFile:
+            path: create-user-roles-table.sql
+            relativeToChangelogFile: true
+        - sqlFile:
+            path: seed-roles.sql
+            relativeToChangelogFile: true
+        - sqlFile:
+            path: seed-admin-user.sql
+            relativeToChangelogFile: true
