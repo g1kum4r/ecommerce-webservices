@@ -62,16 +62,14 @@ class UserService(
     @Transactional
     fun save(user: User, roles: Set<UserRole>): User {
         val savedUser = userRepository.save(user)
-        if (savedUser.id != null) {
-            userRoleRepository.saveUserRoles(savedUser.id, roles)
-        }
+        userRoleRepository.saveUserRoles(savedUser.id, roles)
         return savedUser.copy(roles = roles)
     }
 
     @Transactional
     fun update(user: User): User {
         val savedUser = userRepository.save(user)
-        if (user.roles.isNotEmpty() && savedUser.id != null) {
+        if (user.roles.isNotEmpty()) {
             userRoleRepository.saveUserRoles(savedUser.id, user.roles)
         }
         return savedUser

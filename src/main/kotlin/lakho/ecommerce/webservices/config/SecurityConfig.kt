@@ -1,6 +1,5 @@
 package lakho.ecommerce.webservices.config
 
-import lakho.ecommerce.webservices.config.JwtAuthenticationFilter
 import lakho.ecommerce.webservices.auth.services.JwtService
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration

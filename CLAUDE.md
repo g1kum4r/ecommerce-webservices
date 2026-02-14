@@ -381,6 +381,170 @@ data class User(
 )
 ```
 
+**Code Quality Standards:**
+1. **Unused parameters**: Rename to `_` (underscore) to indicate intentionally unused
+   ```kotlin
+   // Good
+   fun processData(_unusedParam: String, data: Data) {
+       // Only use data
+   }
+
+   // Bad - unused parameter without underscore
+   fun processData(unusedParam: String, data: Data) {
+       // Only use data
+   }
+   ```
+
+2. **Import optimization**: Always use specific imports, never wildcard imports
+   ```kotlin
+   // Good
+   import org.springframework.web.bind.annotation.RestController
+   import org.springframework.web.bind.annotation.RequestMapping
+   import org.springframework.web.bind.annotation.PostMapping
+
+   // Bad - avoid wildcard imports
+   import org.springframework.web.bind.annotation.*
+   ```
+
+3. **Remove unused imports**: Clean up imports after refactoring or code changes
+
+**OWASP Security Standards:**
+
+4. **Input Validation** (OWASP A03:2021 - Injection)
+   ```kotlin
+   // Good - validate and sanitize input
+   @PostMapping("/users")
+   fun createUser(@Valid @RequestBody request: CreateUserRequest): ResponseEntity<User> {
+       return ResponseEntity.ok(userService.createUser(request))
+   }
+
+   data class CreateUserRequest(
+       @field:Email(message = "Invalid email format")
+       val email: String,
+
+       @field:Size(min = 3, max = 50, message = "Username must be 3-50 characters")
+       @field:Pattern(regexp = "^[a-zA-Z0-9_-]+$", message = "Username contains invalid characters")
+       val username: String,
+
+       @field:Size(min = 8, message = "Password must be at least 8 characters")
+       val password: String
+   )
+
+   // Bad - no validation
+   fun createUser(email: String, username: String, password: String) {
+       userRepository.save(User(email, username, password))
+   }
+   ```
+
+5. **Parameterized Queries** (OWASP A03:2021 - Injection)
+   ```kotlin
+   // Good - Spring Data JDBC automatically uses parameterized queries
+   interface UserRepository : CrudRepository<User, UUID> {
+       @Query("SELECT * FROM users WHERE email = :email")
+       fun findByEmail(email: String): User?
+   }
+
+   // Bad - NEVER concatenate SQL strings (SQL injection risk)
+   // jdbcTemplate.query("SELECT * FROM users WHERE email = '" + email + "'")
+   ```
+
+6. **Authentication & Authorization** (OWASP A01:2021 - Broken Access Control)
+   ```kotlin
+   // Good - explicit role checks
+   @GetMapping("/admin/users")
+   @PreAuthorize("hasRole('ADMIN')")
+   fun getAllUsers(): List<UserSummary> {
+       return adminService.getAllUsers()
+   }
+
+   // Good - check ownership in service layer
+   fun getProfile(userId: UUID, requestingUserId: UUID): Profile {
+       if (userId != requestingUserId && !hasAdminRole(requestingUserId)) {
+           throw AccessDeniedException("Cannot access other user's profile")
+       }
+       return profileRepository.findById(userId)
+   }
+   ```
+
+7. **Sensitive Data Exposure** (OWASP A02:2021 - Cryptographic Failures)
+   ```kotlin
+   // Good - use DTOs to control exposed fields
+   data class UserResponse(
+       val id: UUID,
+       val email: String,
+       val username: String
+       // NO passwordHash, no internal flags
+   )
+
+   // Bad - exposing entity directly
+   // return userRepository.findById(userId) // Exposes passwordHash!
+   ```
+
+8. **Secure Password Storage** (OWASP A02:2021 - Cryptographic Failures)
+   ```kotlin
+   // Good - use BCrypt with proper strength
+   @Bean
+   fun passwordEncoder(): PasswordEncoder = BCryptPasswordEncoder()
+
+   fun registerUser(request: RegisterRequest): User {
+       val hashedPassword = passwordEncoder.encode(request.password)
+       return userRepository.save(User(passwordHash = hashedPassword, ...))
+   }
+
+   // Bad - NEVER store plain text passwords
+   ```
+
+9. **Logging Security** (OWASP A09:2021 - Security Logging Failures)
+   ```kotlin
+   // Good - log security events without sensitive data
+   logger.info("Failed login attempt for user: ${request.username}")
+   logger.warn("Unauthorized access attempt to: ${request.requestURI}")
+
+   // Bad - NEVER log passwords, tokens, or sensitive data
+   // logger.debug("JWT token: $token") // Security risk!
+   ```
+
+10. **Error Handling** (OWASP A05:2021 - Security Misconfiguration)
+    ```kotlin
+    // Good - generic error messages to clients
+    @ExceptionHandler(AuthenticationException::class)
+    fun handleAuth(ex: AuthenticationException): ResponseEntity<ErrorResponse> {
+        logger.error("Authentication failed", ex) // Detailed server-side log
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+            .body(ErrorResponse("Invalid credentials")) // Generic client message
+    }
+    ```
+
+11. **JWT Security** (OWASP A07:2021 - Authentication Failures)
+    ```kotlin
+    // Best practices:
+    // - Use strong secret key (min 256 bits)
+    // - Set short expiration for access tokens (15 min)
+    // - Validate signature, expiration, and claims
+    // - Store JWT_SECRET in environment variables only
+    // - Use refresh tokens for renewal
+    ```
+
+12. **API Security Headers** (OWASP A05:2021 - Security Misconfiguration)
+    ```kotlin
+    // Add security headers in SecurityConfig
+    http.headers { headers ->
+        headers
+            .xssProtection { it.enable() }
+            .frameOptions { it.deny() }
+            .httpStrictTransportSecurity { hsts ->
+                hsts.maxAgeInSeconds(31536000).includeSubDomains(true)
+            }
+    }
+    ```
+
+13. **Dependency Security** (OWASP A06:2021 - Vulnerable Components)
+    ```bash
+    # Regularly scan for vulnerable dependencies
+    ./gradlew dependencyCheckAnalyze
+    # Use tools: OWASP Dependency-Check, Snyk, GitHub Dependabot
+    ```
+
 ### Security Checklist for New Endpoints
 
 - [ ] Add endpoint to `SecurityConfig.kt` authorization rules
