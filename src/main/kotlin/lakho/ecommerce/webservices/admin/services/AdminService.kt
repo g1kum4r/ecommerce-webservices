@@ -1,12 +1,13 @@
 package lakho.ecommerce.webservices.admin.services
 
 import lakho.ecommerce.webservices.admin.api.models.UserSummary
+import lakho.ecommerce.webservices.user.Roles
 import lakho.ecommerce.webservices.user.repositories.entities.UserRole
 import lakho.ecommerce.webservices.user.services.UserService
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
-import java.util.UUID
+import java.util.*
 
 @Service
 class AdminService(private val userService: UserService) {
@@ -27,7 +28,7 @@ class AdminService(private val userService: UserService) {
     }
 
     fun getConsumers(pageable: Pageable): Page<UserSummary> {
-        return userService.findByRoles(setOf(UserRole.CONSUMER), pageable).map {
+        return userService.findByRoles(setOf(Roles.CONSUMER), pageable).map {
             UserSummary(
                 id = it.id,
                 username = it.username,
@@ -42,7 +43,7 @@ class AdminService(private val userService: UserService) {
     }
 
     fun getStores(pageable: Pageable): Page<UserSummary> {
-        return userService.findByRoles(setOf(UserRole.STORE), pageable).map {
+        return userService.findByRoles(setOf(Roles.STORE), pageable).map {
             UserSummary(
                 id = it.id,
                 username = it.username,

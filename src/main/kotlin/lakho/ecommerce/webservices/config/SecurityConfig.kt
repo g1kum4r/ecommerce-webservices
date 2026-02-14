@@ -1,8 +1,11 @@
 package lakho.ecommerce.webservices.config
 
 import lakho.ecommerce.webservices.auth.services.JwtService
+import lakho.ecommerce.webservices.auth.services.OAuth2AuthenticationSuccessHandler
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.security.authentication.AuthenticationManager
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
@@ -13,7 +16,10 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
-internal class SecurityConfig(private val jwtService: JwtService) {
+internal class SecurityConfig(
+    private val jwtService: JwtService,
+    private val oauth2SuccessHandler: OAuth2AuthenticationSuccessHandler
+) {
 
     @Bean
     fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
@@ -39,12 +45,17 @@ internal class SecurityConfig(private val jwtService: JwtService) {
             }
             .authorizeHttpRequests {
                 it
-                    .requestMatchers("/api/auth/**").permitAll()
+                    .requestMatchers("/api/auth/**", "/login/**", "/oauth2/**").permitAll()
                     .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                     .requestMatchers("/api/admin/**").hasRole("ADMIN")
                     .requestMatchers("/api/store/**").hasRole("STORE")
                     .requestMatchers("/api/consumer/**").hasRole("CONSUMER")
                     .anyRequest().authenticated()
+            }
+            .oauth2Login { oauth2 ->
+                oauth2
+                    .successHandler(oauth2SuccessHandler)
+                    .failureUrl("/login?error=true")
             }
             .addFilterBefore(
                 JwtAuthenticationFilter(jwtService),
@@ -54,6 +65,13 @@ internal class SecurityConfig(private val jwtService: JwtService) {
         return http.build()
     }
 
+
     @Bean
     fun passwordEncoder(): PasswordEncoder = BCryptPasswordEncoder()
+
+
+    @Bean
+    fun authenticationManager(config: AuthenticationConfiguration): AuthenticationManager {
+        return config.authenticationManager
+    }
 }

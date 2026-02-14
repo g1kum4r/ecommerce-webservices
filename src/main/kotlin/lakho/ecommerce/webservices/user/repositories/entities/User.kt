@@ -8,10 +8,10 @@ import java.util.UUID
 
 @Table("users")
 data class User(
-    @Id val id: UUID = UUID.randomUUID(),
+    @Id var id: UUID? = null,
     val email: String,
     val username: String,
-    val passwordHash: String,
+    val passwordHash: String? = null,
     val firstName: String? = null,
     val lastName: String? = null,
     val accountExpired: Boolean = false,
@@ -19,6 +19,5 @@ data class User(
     val credentialsExpired: Boolean = false,
     val enabled: Boolean = true,
     val createdAt: Instant = Instant.now(),
-    val updatedAt: Instant = Instant.now(),
-    @Transient val roles: Set<UserRole> = emptySet()
+    val updatedAt: Instant = Instant.now()
 )

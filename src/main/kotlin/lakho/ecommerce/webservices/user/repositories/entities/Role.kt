@@ -5,6 +5,6 @@ import org.springframework.data.relational.core.mapping.Table
 
 @Table("roles")
 data class Role(
-    @Id val id: Long? = null,
+    @Id val id: Long,
     val name: String
 )

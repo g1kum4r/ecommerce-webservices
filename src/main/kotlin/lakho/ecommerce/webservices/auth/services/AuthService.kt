@@ -4,33 +4,41 @@ import lakho.ecommerce.webservices.auth.api.models.AuthResponse
 import lakho.ecommerce.webservices.auth.api.models.LoginRequest
 import lakho.ecommerce.webservices.auth.api.models.RefreshRequest
 import lakho.ecommerce.webservices.auth.api.models.RegisterRequest
-import lakho.ecommerce.webservices.user.repositories.entities.User
-import lakho.ecommerce.webservices.user.repositories.entities.UserRole
+import lakho.ecommerce.webservices.user.Roles
+import lakho.ecommerce.webservices.user.repositories.models.User
+import lakho.ecommerce.webservices.user.repositories.models.toUserModel
 import lakho.ecommerce.webservices.user.services.UserService
 import org.slf4j.LoggerFactory
+import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.authentication.BadCredentialsException
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
+import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 
 @Service
 internal class AuthService(
     private val userService: UserService,
     private val jwtService: JwtService,
-    private val passwordEncoder: PasswordEncoder
+    private val passwordEncoder: PasswordEncoder,
+    private val authenticationManager: AuthenticationManager
 ) {
     private val logger = LoggerFactory.getLogger(AuthService::class.java)
 
+
+    @Transactional(readOnly = false, transactionManager = "transactionManager")
     fun register(request: RegisterRequest): AuthResponse {
-        require(request.roles.none { it == UserRole.ADMIN }) { "Cannot register as ADMIN" }
+        require(request.roles.none { it == Roles.ADMIN }) { "Cannot register as ADMIN" }
         require(!userService.existsByEmail(request.email)) { "Email already registered" }
 
         val encodedPassword = passwordEncoder.encode(request.password)
             ?: throw IllegalStateException("Password encoding failed")
 
         val user = userService.save(
-            User(
+            lakho.ecommerce.webservices.user.repositories.entities.User(
                 email = request.email,
-                username = request.username,
+                username = request.email,
                 passwordHash = encodedPassword
             ),
             request.roles
@@ -42,29 +50,16 @@ internal class AuthService(
     }
 
     fun login(request: LoginRequest): AuthResponse {
+
         val user = userService.findByEmailOrUsername(request.email)
+            ?: throw UsernameNotFoundException("User not found: ${request.email}")
 
-        if (user == null) {
-            logger.warn("Login attempt with non-existent email: {}", request.email)
-            throw BadCredentialsException("Invalid credentials")
-        }
-
-        if (!passwordEncoder.matches(request.password, user.passwordHash)) {
-            logger.warn("Failed login attempt for user: userId={}, email={}", user.id, user.email)
-            throw BadCredentialsException("Invalid credentials")
-        }
-
-        if (!user.enabled) {
-            logger.warn("Login attempt for disabled account: userId={}", user.id)
-            throw IllegalArgumentException("Account is disabled")
-        }
-
-        if (user.accountLocked) {
-            logger.warn("Login attempt for locked account: userId={}", user.id)
-            throw IllegalArgumentException("Account is locked")
-        }
-
-        logger.info("User logged in successfully: userId={}, email={}", user.id, user.email)
+        this.authenticationManager.authenticate(
+            UsernamePasswordAuthenticationToken(
+                request.email,
+                request.password
+            )
+        )
 
         return generateAuthResponse(user)
     }
@@ -82,16 +77,16 @@ internal class AuthService(
             throw IllegalArgumentException("Invalid refresh token")
         }
 
-        val user = userService.findByEmailOrUsername(email)
+        val secureUser = userService.findSecureUserByEmailOrUsername(email)
 
-        if (user == null) {
+        if (secureUser == null) {
             logger.warn("Refresh token for non-existent user: email={}", email)
             throw IllegalArgumentException("User not found")
         }
 
-        logger.info("Token refreshed successfully: userId={}, email={}", user.id, user.email)
+        logger.info("Token refreshed successfully: userId={}, email={}", secureUser.id, secureUser.email)
 
-        return generateAuthResponse(user)
+        return generateAuthResponse(secureUser.toUserModel())
     }
 
     private fun generateAuthResponse(user: User): AuthResponse {

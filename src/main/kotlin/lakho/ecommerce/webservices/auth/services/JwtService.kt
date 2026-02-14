@@ -9,7 +9,7 @@ import java.util.Date
 import javax.crypto.SecretKey
 
 @Service
-internal class JwtService(private val jwtProperties: JwtProperties) {
+class JwtService(private val jwtProperties: JwtProperties) {
 
     private val key: SecretKey = Keys.hmacShaKeyFor(jwtProperties.secret.toByteArray())
 
