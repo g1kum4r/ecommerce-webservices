@@ -20,6 +20,23 @@ internal class SecurityConfig(private val jwtService: JwtService) {
         http
             .csrf { it.disable() }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
+            .headers { headers ->
+                headers
+                    .xssProtection { xss ->
+                        xss.headerValue(org.springframework.security.web.header.writers.XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK)
+                    }
+                    .contentSecurityPolicy { csp ->
+                        csp.policyDirectives("default-src 'self'")
+                    }
+                    .frameOptions { frame ->
+                        frame.deny()
+                    }
+                    .httpStrictTransportSecurity { hsts ->
+                        hsts.maxAgeInSeconds(31536000)
+                            .includeSubDomains(true)
+                            .preload(true)
+                    }
+            }
             .authorizeHttpRequests {
                 it
                     .requestMatchers("/api/auth/**").permitAll()

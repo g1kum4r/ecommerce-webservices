@@ -1,5 +1,6 @@
 package lakho.ecommerce.webservices.auth.api
 
+import jakarta.validation.Valid
 import lakho.ecommerce.webservices.auth.api.models.AuthResponse
 import lakho.ecommerce.webservices.auth.api.models.LoginRequest
 import lakho.ecommerce.webservices.auth.api.models.RefreshRequest
@@ -16,14 +17,14 @@ import org.springframework.web.bind.annotation.RestController
 class AuthController internal constructor(private val authService: AuthService) {
 
     @PostMapping("/register")
-    fun register(@RequestBody request: RegisterRequest): ResponseEntity<AuthResponse> =
+    fun register(@Valid @RequestBody request: RegisterRequest): ResponseEntity<AuthResponse> =
         ResponseEntity.ok(authService.register(request))
 
     @PostMapping("/login")
-    fun login(@RequestBody request: LoginRequest): ResponseEntity<AuthResponse> =
+    fun login(@Valid @RequestBody request: LoginRequest): ResponseEntity<AuthResponse> =
         ResponseEntity.ok(authService.login(request))
 
     @PostMapping("/refresh")
-    fun refresh(@RequestBody request: RefreshRequest): ResponseEntity<AuthResponse> =
+    fun refresh(@Valid @RequestBody request: RefreshRequest): ResponseEntity<AuthResponse> =
         ResponseEntity.ok(authService.refresh(request))
 }
