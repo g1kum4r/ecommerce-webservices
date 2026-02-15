@@ -1,0 +1,32 @@
+databaseChangeLog:
+  - changeSet:
+      id: "address-tables.v1"
+      author: "G1"
+      failOnError: true
+      runOnChange: true
+      changes:
+        - sqlFile:
+            path: create-regions-table.sql
+            relativeToChangelogFile: true
+        - sqlFile:
+            path: create-countries-table.sql
+            relativeToChangelogFile: true
+        - sqlFile:
+            path: create-states-table.sql
+            relativeToChangelogFile: true
+        - sqlFile:
+            path: create-cities-table.sql
+            relativeToChangelogFile: true
+        - sqlFile:
+            path: create-addresses-table.sql
+            relativeToChangelogFile: true
+
+  - changeSet:
+      id: "address-seed-data.v1"
+      author: "G1"
+      failOnError: true
+      runOnChange: true
+      changes:
+        - sqlFile:
+            path: seed-address-data.sql
+            relativeToChangelogFile: true

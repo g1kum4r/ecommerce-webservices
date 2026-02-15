@@ -53,6 +53,7 @@ internal class SecurityConfig(
             .authorizeHttpRequests {
                 it
                     .requestMatchers("/api/auth/**", "/login/**", "/oauth2/**").permitAll()
+                    .requestMatchers("/api/public/**").permitAll()
                     .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                     .requestMatchers("/api/admin/**").hasRole("ADMIN")
                     .requestMatchers("/api/storeowner/**").hasRole("STORE_OWNER")

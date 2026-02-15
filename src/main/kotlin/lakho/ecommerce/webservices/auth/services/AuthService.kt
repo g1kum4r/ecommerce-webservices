@@ -31,7 +31,8 @@ internal class AuthService(
     private val tokenService: TokenService,
     private val eventPublisher: ApplicationEventPublisher,
     private val jwtTokenCacheService: JwtTokenCacheService,
-    private val userDataCacheService: UserDataCacheService
+    private val userDataCacheService: UserDataCacheService,
+    private val storeOwnerProfileService: lakho.ecommerce.webservices.storeowner.services.StoreOwnerProfileService
 ) {
     private val logger = LoggerFactory.getLogger(AuthService::class.java)
 
@@ -54,6 +55,17 @@ internal class AuthService(
         )
 
         logger.info("User registered successfully: userId={}, email={}", user.id, user.email)
+
+        // Create store owner profile if user has STORE_OWNER role
+        if (request.roles.contains(Roles.STORE_OWNER)) {
+            try {
+                storeOwnerProfileService.createProfile(user.id)
+                logger.info("Store owner profile created: userId={}", user.id)
+            } catch (e: Exception) {
+                logger.error("Failed to create store owner profile: userId={}", user.id, e)
+                // Don't fail registration if profile creation fails
+            }
+        }
 
         // Create a verification token and publish event
         try {

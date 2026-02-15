@@ -1,0 +1,7 @@
+databaseChangeLog:
+  - include:
+      file: db/changelog/v1.1.0/address/changelog-address.yaml
+      relativeToChangelogFile: false
+  - include:
+      file: db/changelog/v1.1.0/storeowner/changelog-storeowner.yaml
+      relativeToChangelogFile: false

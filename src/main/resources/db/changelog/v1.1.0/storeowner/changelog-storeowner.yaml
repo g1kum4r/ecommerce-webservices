@@ -1,0 +1,40 @@
+databaseChangeLog:
+  - changeSet:
+      id: "storeowner-profiles-table.v1"
+      author: "G1"
+      failOnError: true
+      runOnChange: true
+      changes:
+        - sqlFile:
+            path: create-store-owner-profiles-table.sql
+            relativeToChangelogFile: true
+
+  - changeSet:
+      id: "categories-tables.v1"
+      author: "G1"
+      failOnError: true
+      runOnChange: true
+      changes:
+        - sqlFile:
+            path: create-categories-tables.sql
+            relativeToChangelogFile: true
+
+  - changeSet:
+      id: "seed-categories-data.v1"
+      author: "G1"
+      failOnError: true
+      runOnChange: false
+      changes:
+        - sqlFile:
+            path: seed-categories-data.sql
+            relativeToChangelogFile: true
+
+  - changeSet:
+      id: "stores-table.v1"
+      author: "G1"
+      failOnError: true
+      runOnChange: true
+      changes:
+        - sqlFile:
+            path: create-stores-table.sql
+            relativeToChangelogFile: true
