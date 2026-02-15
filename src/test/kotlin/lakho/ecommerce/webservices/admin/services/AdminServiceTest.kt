@@ -205,7 +205,7 @@ class AdminServiceTest {
         assertNotNull(result)
         assertEquals(2, result?.roles?.size)
         assertTrue(result?.roles?.contains(Role(1, Roles.ADMIN.name)) ?: false)
-        assertTrue(result?.roles?.contains(Role(3, Roles.CONSUMER.name)) ?: false)
+        assertTrue(result?.roles?.contains(Role(2, Roles.CONSUMER.name)) ?: false)
         assertEquals(true, result?.accountNonExpired)
         assertEquals(true, result?.accountNonLocked)
         assertEquals(true, result?.credentialsNonExpired)

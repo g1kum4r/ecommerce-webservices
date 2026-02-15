@@ -1,12 +1,15 @@
 package lakho.ecommerce.webservices.user.services
 
 import lakho.ecommerce.webservices.user.Roles
+import lakho.ecommerce.webservices.user.events.RoleOperation
+import lakho.ecommerce.webservices.user.events.UserRoleUpdatedEvent
 import lakho.ecommerce.webservices.user.repositories.RoleRepository
 import lakho.ecommerce.webservices.user.repositories.UserRepository
 import lakho.ecommerce.webservices.user.repositories.UserRoleRepository
 import lakho.ecommerce.webservices.user.repositories.entities.UserRole
 import lakho.ecommerce.webservices.user.repositories.models.SecureUser
 import lakho.ecommerce.webservices.user.repositories.models.User
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.Pageable
@@ -20,30 +23,32 @@ class UserService(
     private val userRepository: UserRepository,
     private val userRoleRepository: UserRoleRepository,
     private val roleRepository: RoleRepository,
-    private val jdbcAggregateTemplate: JdbcAggregateTemplate
+    private val jdbcAggregateTemplate: JdbcAggregateTemplate,
+    private val userRoleCacheService: UserRoleCacheService,
+    private val eventPublisher: ApplicationEventPublisher
 ) {
 
     fun findById(id: UUID): User? {
         val user = userRepository.findById(id).orElse(null) ?: return null
-        val roles = roleRepository.findByUserId(user.id!!)
+        val roles = userRoleCacheService.getUserRoles(user.id!!)
         return User(user, roles)
     }
 
     fun findByEmailOrUsername(emailOrUsername: String): User? {
         val user = userRepository.findByEmailOrUsername(emailOrUsername, emailOrUsername) ?: return null
-        val roles = roleRepository.findByUserId(user.id!!)
+        val roles = userRoleCacheService.getUserRoles(user.id!!)
         return User(user, roles)
     }
 
     fun findSecureUserByEmailOrUsername(emailOrUsername: String): SecureUser? {
         val user = userRepository.findByEmailOrUsername(emailOrUsername, emailOrUsername) ?: return null
-        val roles = roleRepository.findByUserId(user.id!!)
+        val roles = userRoleCacheService.getUserRoles(user.id!!)
         return SecureUser(user, roles)
     }
 
     fun findAll(): List<User> {
         return userRepository.findAll().map { user ->
-            val roles = roleRepository.findByUserId(user.id!!).toSet()
+            val roles = userRoleCacheService.getUserRoles(user.id!!)
             User(user, roles)
         }
     }
@@ -68,6 +73,18 @@ class UserService(
         roles.map { UserRole(savedUser.id!!, it.id) }
             .let { jdbcAggregateTemplate.insertAll(it) }
 
+        // Cache the roles immediately after assignment
+        userRoleCacheService.cacheUserRoles(savedUser.id!!, roles)
+
+        // Publish event for cache invalidation on transaction commit
+        eventPublisher.publishEvent(
+            UserRoleUpdatedEvent(
+                source = this,
+                userId = savedUser.id!!,
+                operation = RoleOperation.ASSIGNED
+            )
+        )
+
         return User(savedUser, roles)
     }
 
@@ -87,6 +104,9 @@ class UserService(
     fun deleteById(id: UUID) {
         userRoleRepository.deleteByUserId(id)
         userRepository.deleteById(id)
+
+        // Invalidate role cache
+        userRoleCacheService.invalidateUserRolesCache(id)
     }
 
     fun existsByEmail(email: String): Boolean = userRepository.existsByEmail(email)

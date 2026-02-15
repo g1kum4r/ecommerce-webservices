@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.*
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.jdbc.core.JdbcAggregateTemplate
 import java.time.Instant
@@ -21,9 +22,10 @@ class UserServiceTest {
     private lateinit var userRepository: UserRepository
     private lateinit var userRoleRepository: UserRoleRepository
     private lateinit var roleRepository: RoleRepository
-    private lateinit var userService: UserService
-
     private lateinit var jdbcAggregateTemplate: JdbcAggregateTemplate
+    private lateinit var userRoleCacheService: UserRoleCacheService
+    private lateinit var eventPublisher: ApplicationEventPublisher
+    private lateinit var userService: UserService
 
     @BeforeEach
     fun setup() {
@@ -31,7 +33,16 @@ class UserServiceTest {
         userRoleRepository = mock(UserRoleRepository::class.java)
         roleRepository = mock(RoleRepository::class.java)
         jdbcAggregateTemplate = mock(JdbcAggregateTemplate::class.java)
-        userService = UserService(userRepository, userRoleRepository, roleRepository, jdbcAggregateTemplate)
+        userRoleCacheService = mock(UserRoleCacheService::class.java)
+        eventPublisher = mock(ApplicationEventPublisher::class.java)
+        userService = UserService(
+            userRepository,
+            userRoleRepository,
+            roleRepository,
+            jdbcAggregateTemplate,
+            userRoleCacheService,
+            eventPublisher
+        )
     }
 
     @Test
@@ -55,7 +66,7 @@ class UserServiceTest {
         val roles = setOf(Role(id = 1, name = "CONSUMER"))
 
         `when`(userRepository.findById(userId)).thenReturn(Optional.of(user))
-        `when`(roleRepository.findByUserId(userId)).thenReturn(roles)
+        `when`(userRoleCacheService.getUserRoles(userId)).thenReturn(roles)
 
         // Act
         val result = userService.findById(userId)
@@ -66,7 +77,7 @@ class UserServiceTest {
         assertEquals(user.username, result?.username)
         assertEquals(1, result?.roles?.size)
         verify(userRepository).findById(userId)
-        verify(roleRepository).findByUserId(userId)
+        verify(userRoleCacheService).getUserRoles(userId)
     }
 
     @Test
@@ -81,7 +92,7 @@ class UserServiceTest {
         // Assert
         assertNull(result)
         verify(userRepository).findById(userId)
-        verify(roleRepository, never()).findByUserId(userId)
+        verify(userRoleCacheService, never()).getUserRoles(userId)
     }
 
     @Test
@@ -105,7 +116,7 @@ class UserServiceTest {
         val roles = setOf(Role(id = 1, name = "CONSUMER"))
 
         `when`(userRepository.findByEmailOrUsername(email, email)).thenReturn(user)
-        `when`(roleRepository.findByUserId(user.id!!)).thenReturn(roles)
+        `when`(userRoleCacheService.getUserRoles(user.id!!)).thenReturn(roles)
 
         // Act
         val result = userService.findByEmailOrUsername(email)
@@ -151,7 +162,7 @@ class UserServiceTest {
         val roles = setOf(Role(id = 1, name = "CONSUMER"))
 
         `when`(userRepository.findByEmailOrUsername(email, email)).thenReturn(user)
-        `when`(roleRepository.findByUserId(user.id!!)).thenReturn(roles)
+        `when`(userRoleCacheService.getUserRoles(user.id!!)).thenReturn(roles)
 
         // Act
         val result = userService.findSecureUserByEmailOrUsername(email)
@@ -197,8 +208,8 @@ class UserServiceTest {
         val roles = setOf(Role(id = 1, name = "CONSUMER"))
 
         `when`(userRepository.findAll()).thenReturn(listOf(user1, user2))
-        `when`(roleRepository.findByUserId(user1.id!!)).thenReturn(roles)
-        `when`(roleRepository.findByUserId(user2.id!!)).thenReturn(roles)
+        `when`(userRoleCacheService.getUserRoles(user1.id!!)).thenReturn(roles)
+        `when`(userRoleCacheService.getUserRoles(user2.id!!)).thenReturn(roles)
 
         // Act
         val result = userService.findAll()
@@ -206,8 +217,8 @@ class UserServiceTest {
         // Assert
         assertEquals(2, result.size)
         verify(userRepository).findAll()
-        verify(roleRepository, times(1)).findByUserId(user1.id!!)
-        verify(roleRepository, times(1)).findByUserId(user2.id!!)
+        verify(userRoleCacheService, times(1)).getUserRoles(user1.id!!)
+        verify(userRoleCacheService, times(1)).getUserRoles(user2.id!!)
     }
 
     @Test
@@ -245,8 +256,8 @@ class UserServiceTest {
         val pageable = PageRequest.of(0, 10)
 
         `when`(userRepository.findAll()).thenReturn(listOf(user1, user2))
-        `when`(roleRepository.findByUserId(user1.id!!)).thenReturn(roles)
-        `when`(roleRepository.findByUserId(user2.id!!)).thenReturn(roles)
+        `when`(userRoleCacheService.getUserRoles(user1.id!!)).thenReturn(roles)
+        `when`(userRoleCacheService.getUserRoles(user2.id!!)).thenReturn(roles)
 
         // Act
         val result = userService.findAllPaginated(pageable)
@@ -282,7 +293,8 @@ class UserServiceTest {
         `when`(userRepository.save(user)).thenReturn(savedUser)
         `when`(roleRepository.findByNameIn(listOf("CONSUMER"))).thenReturn(roleEntities.toList())
         `when`(jdbcAggregateTemplate.insertAll(anyList())).thenReturn(userRoles)
-        `when`(roleRepository.findByUserId(savedUser.id!!)).thenReturn(roleEntities)
+        doNothing().`when`(userRoleCacheService).cacheUserRoles(savedUser.id!!, roleEntities)
+        doNothing().`when`(eventPublisher).publishEvent(any())
 
         // Act
         val result = userService.save(user, roles)
@@ -294,6 +306,8 @@ class UserServiceTest {
         verify(userRepository).save(user)
         verify(roleRepository).findByNameIn(listOf("CONSUMER"))
         verify(jdbcAggregateTemplate).insertAll(anyList())
+        verify(userRoleCacheService).cacheUserRoles(savedUser.id!!, roleEntities)
+        verify(eventPublisher).publishEvent(any())
     }
 
     @Test
@@ -331,6 +345,7 @@ class UserServiceTest {
         val userId = UUID.randomUUID()
         doNothing().`when`(userRoleRepository).deleteByUserId(userId)
         doNothing().`when`(userRepository).deleteById(userId)
+        doNothing().`when`(userRoleCacheService).invalidateUserRolesCache(userId)
 
         // Act
         userService.deleteById(userId)
@@ -338,6 +353,7 @@ class UserServiceTest {
         // Assert
         verify(userRoleRepository).deleteByUserId(userId)
         verify(userRepository).deleteById(userId)
+        verify(userRoleCacheService).invalidateUserRolesCache(userId)
     }
 
     @Test
