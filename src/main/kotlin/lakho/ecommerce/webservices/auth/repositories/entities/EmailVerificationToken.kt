@@ -7,7 +7,7 @@ import java.util.UUID
 
 @Table("email_verification_tokens")
 data class EmailVerificationToken(
-    @Id val id: UUID = UUID.randomUUID(),
+    @Id val id: UUID? = null,
     val userId: UUID,
     val token: String,
     val expiresAt: Instant,

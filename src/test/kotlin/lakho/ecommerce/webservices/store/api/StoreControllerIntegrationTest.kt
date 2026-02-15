@@ -3,15 +3,20 @@ package lakho.ecommerce.webservices.store.api
 import com.fasterxml.jackson.databind.ObjectMapper
 import lakho.ecommerce.webservices.auth.api.models.LoginRequest
 import lakho.ecommerce.webservices.auth.api.models.RegisterRequest
+import lakho.ecommerce.webservices.auth.services.EmailService
 import lakho.ecommerce.webservices.user.Roles
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
+import org.mockito.kotlin.doNothing
+import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 import org.springframework.http.MediaType
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
@@ -31,6 +36,9 @@ class StoreControllerIntegrationTest {
 
     @Autowired
     private lateinit var objectMapper: ObjectMapper
+
+    @MockitoBean
+    private lateinit var emailService: EmailService
 
     private var storeToken: String = ""
     private var consumerToken: String = ""
@@ -54,6 +62,11 @@ class StoreControllerIntegrationTest {
 
     @BeforeEach
     fun setup() {
+        // Mock email service to prevent actual email sending during tests
+        doNothing().whenever(emailService).sendVerificationEmail(any(), any(), any())
+        doNothing().whenever(emailService).sendPasswordResetEmail(any(), any(), any())
+        doNothing().whenever(emailService).sendPasswordResetConfirmationEmail(any(), any())
+
         // Register and login as store
         val storeRegisterRequest = RegisterRequest(
             email = "store@test.com",

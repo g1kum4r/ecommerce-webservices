@@ -7,7 +7,7 @@ import java.util.UUID
 
 @Table("password_reset_tokens")
 data class PasswordResetToken(
-    @Id val id: UUID = UUID.randomUUID(),
+    @Id val id: UUID? = null,
     val userId: UUID,
     val token: String,
     val expiresAt: Instant,

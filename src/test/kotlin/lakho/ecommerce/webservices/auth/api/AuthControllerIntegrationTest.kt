@@ -9,14 +9,20 @@ import lakho.ecommerce.webservices.auth.api.models.ResetPasswordRequest
 import lakho.ecommerce.webservices.auth.api.models.VerifyEmailRequest
 import lakho.ecommerce.webservices.auth.repositories.EmailVerificationTokenRepository
 import lakho.ecommerce.webservices.auth.repositories.PasswordResetTokenRepository
+import lakho.ecommerce.webservices.auth.services.EmailService
 import lakho.ecommerce.webservices.user.Roles
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
+import org.mockito.kotlin.doNothing
+import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 import org.springframework.http.MediaType
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
@@ -42,6 +48,9 @@ class AuthControllerIntegrationTest {
     @Autowired
     private lateinit var passwordResetTokenRepository: PasswordResetTokenRepository
 
+    @MockitoBean
+    private lateinit var emailService: EmailService
+
     companion object {
         @Container
         val postgresContainer = PostgreSQLContainer<Nothing>("postgres:16-alpine").apply {
@@ -57,6 +66,14 @@ class AuthControllerIntegrationTest {
             registry.add("spring.datasource.username", postgresContainer::getUsername)
             registry.add("spring.datasource.password", postgresContainer::getPassword)
         }
+    }
+
+    @BeforeEach
+    fun setup() {
+        // Mock email service to prevent actual email sending during tests
+        doNothing().whenever(emailService).sendVerificationEmail(any(), any(), any())
+        doNothing().whenever(emailService).sendPasswordResetEmail(any(), any(), any())
+        doNothing().whenever(emailService).sendPasswordResetConfirmationEmail(any(), any())
     }
 
     @Test

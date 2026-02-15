@@ -52,6 +52,11 @@ class AuthServiceTest {
             roles = setOf(Roles.CONSUMER)
         )
         val encodedPassword = "encodedPassword"
+        val entity = User(
+            email = request.email,
+            username = request.email,
+            passwordHash = encodedPassword
+        )
         val savedUser = lakho.ecommerce.webservices.user.repositories.models.User(
             id = UUID.randomUUID(),
             email = request.email,
@@ -69,7 +74,7 @@ class AuthServiceTest {
 
         `when`(userService.existsByEmail(request.email)).thenReturn(false)
         `when`(passwordEncoder.encode(request.password)).thenReturn(encodedPassword)
-        `when`(userService.save(any(User::class.java), eq(request.roles))).thenReturn(savedUser)
+        `when`(userService.save(entity, eq(request.roles))).thenReturn(savedUser)
         `when`(jwtService.generateAccessToken(savedUser.email, "CONSUMER")).thenReturn(accessToken)
         `when`(jwtService.generateRefreshToken(savedUser.email, "CONSUMER")).thenReturn(refreshToken)
 
