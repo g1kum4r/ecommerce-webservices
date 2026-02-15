@@ -26,6 +26,7 @@ class AuthServiceTest {
     private lateinit var passwordEncoder: PasswordEncoder
     private lateinit var authenticationManager: AuthenticationManager
     private lateinit var jwtTokenCacheService: JwtTokenCacheService
+    private lateinit var userDataCacheService: lakho.ecommerce.webservices.user.services.UserDataCacheService
     private lateinit var authService: AuthService
 
     @BeforeEach
@@ -35,6 +36,7 @@ class AuthServiceTest {
         passwordEncoder = mock(PasswordEncoder::class.java)
         authenticationManager = mock(AuthenticationManager::class.java)
         jwtTokenCacheService = mock(JwtTokenCacheService::class.java)
+        userDataCacheService = mock(lakho.ecommerce.webservices.user.services.UserDataCacheService::class.java)
         authService = AuthService(
             userService,
             jwtService,
@@ -43,7 +45,8 @@ class AuthServiceTest {
             emailService = mock(EmailService::class.java),
             tokenService = mock(TokenService::class.java),
             eventPublisher = mock(org.springframework.context.ApplicationEventPublisher::class.java),
-            jwtTokenCacheService = jwtTokenCacheService
+            jwtTokenCacheService = jwtTokenCacheService,
+            userDataCacheService = userDataCacheService
         )
     }
 

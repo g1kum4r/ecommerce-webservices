@@ -24,6 +24,7 @@ class UserServiceTest {
     private lateinit var roleRepository: RoleRepository
     private lateinit var jdbcAggregateTemplate: JdbcAggregateTemplate
     private lateinit var userRoleCacheService: UserRoleCacheService
+    private lateinit var userDataCacheService: UserDataCacheService
     private lateinit var eventPublisher: ApplicationEventPublisher
     private lateinit var userService: UserService
 
@@ -34,6 +35,7 @@ class UserServiceTest {
         roleRepository = mock(RoleRepository::class.java)
         jdbcAggregateTemplate = mock(JdbcAggregateTemplate::class.java)
         userRoleCacheService = mock(UserRoleCacheService::class.java)
+        userDataCacheService = mock(UserDataCacheService::class.java)
         eventPublisher = mock(ApplicationEventPublisher::class.java)
         userService = UserService(
             userRepository,
@@ -41,6 +43,7 @@ class UserServiceTest {
             roleRepository,
             jdbcAggregateTemplate,
             userRoleCacheService,
+            userDataCacheService,
             eventPublisher
         )
     }

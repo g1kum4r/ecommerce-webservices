@@ -10,6 +10,7 @@ import lakho.ecommerce.webservices.event.events.UserRegisteredEvent
 import lakho.ecommerce.webservices.user.Roles
 import lakho.ecommerce.webservices.user.repositories.models.User
 import lakho.ecommerce.webservices.user.repositories.models.toUserModel
+import lakho.ecommerce.webservices.user.services.UserDataCacheService
 import lakho.ecommerce.webservices.user.services.UserService
 import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationEventPublisher
@@ -29,7 +30,8 @@ internal class AuthService(
     private val emailService: EmailService,
     private val tokenService: TokenService,
     private val eventPublisher: ApplicationEventPublisher,
-    private val jwtTokenCacheService: JwtTokenCacheService
+    private val jwtTokenCacheService: JwtTokenCacheService,
+    private val userDataCacheService: UserDataCacheService
 ) {
     private val logger = LoggerFactory.getLogger(AuthService::class.java)
 
@@ -176,10 +178,21 @@ internal class AuthService(
         }
 
         try {
+            // Extract user email from token to invalidate user data cache
+            val email = jwtService.extractEmail(accessToken)
+
+            // Remove token from cache
             jwtTokenCacheService.removeAccessToken(accessToken)
-            logger.info("User logged out successfully")
+
+            // Invalidate user data cache
+            if (email != null) {
+                userDataCacheService.invalidateUserDataCacheByEmail(email)
+                logger.info("User logged out successfully: email={}", email)
+            } else {
+                logger.info("User logged out successfully (email not found in token)")
+            }
         } catch (e: Exception) {
-            logger.error("Failed to remove token from cache during logout", e)
+            logger.error("Failed to remove token/user data from cache during logout", e)
             throw IllegalStateException("Logout failed")
         }
     }
@@ -189,19 +202,19 @@ internal class AuthService(
         val accessToken = jwtService.generateAccessToken(user.email, roles)
         val refreshToken = jwtService.generateRefreshToken(user.email, roles)
 
-        // Publish LoginSuccessEvent to cache tokens in Redis
+        // Publish LoginSuccessEvent to cache tokens and user data in Redis
         try {
             eventPublisher.publishEvent(
                 LoginSuccessEvent(
                     source = this,
-                    email = user.email,
+                    user = user,
                     accessToken = accessToken,
                     refreshToken = refreshToken
                 )
             )
-            logger.debug("LoginSuccessEvent published: email={}", user.email)
+            logger.debug("LoginSuccessEvent published: userId={}, email={}", user.id, user.email)
         } catch (e: Exception) {
-            logger.error("Failed to publish LoginSuccessEvent: email={}", user.email, e)
+            logger.error("Failed to publish LoginSuccessEvent: userId={}, email={}", user.id, user.email, e)
             // Don't fail auth if event publishing fails
         }
 

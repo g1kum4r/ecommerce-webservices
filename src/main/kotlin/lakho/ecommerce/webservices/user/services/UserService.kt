@@ -2,7 +2,9 @@ package lakho.ecommerce.webservices.user.services
 
 import lakho.ecommerce.webservices.user.Roles
 import lakho.ecommerce.webservices.user.events.RoleOperation
+import lakho.ecommerce.webservices.user.events.UserOperation
 import lakho.ecommerce.webservices.user.events.UserRoleUpdatedEvent
+import lakho.ecommerce.webservices.user.events.UserUpdatedEvent
 import lakho.ecommerce.webservices.user.repositories.RoleRepository
 import lakho.ecommerce.webservices.user.repositories.UserRepository
 import lakho.ecommerce.webservices.user.repositories.UserRoleRepository
@@ -25,15 +27,26 @@ class UserService(
     private val roleRepository: RoleRepository,
     private val jdbcAggregateTemplate: JdbcAggregateTemplate,
     private val userRoleCacheService: UserRoleCacheService,
+    private val userDataCacheService: UserDataCacheService,
     private val eventPublisher: ApplicationEventPublisher
 ) {
 
+    /**
+     * Find user by ID.
+     * Note: User data cache is available via userDataCacheService for display purposes,
+     * but this method loads full user data from database for complete information.
+     */
     fun findById(id: UUID): User? {
         val user = userRepository.findById(id).orElse(null) ?: return null
         val roles = userRoleCacheService.getUserRoles(user.id!!)
         return User(user, roles)
     }
 
+    /**
+     * Find user by email or username.
+     * Note: User data cache is available via userDataCacheService for display purposes,
+     * but this method loads full user data from database for complete information.
+     */
     fun findByEmailOrUsername(emailOrUsername: String): User? {
         val user = userRepository.findByEmailOrUsername(emailOrUsername, emailOrUsername) ?: return null
         val roles = userRoleCacheService.getUserRoles(user.id!!)
@@ -89,15 +102,36 @@ class UserService(
     }
 
     @Transactional(readOnly = false)
-    fun update(user: lakho.ecommerce.webservices.user.repositories.entities.User): User =
-        User(userRepository.save(user))
+    fun update(user: lakho.ecommerce.webservices.user.repositories.entities.User): User {
+        val updatedUser = userRepository.save(user)
+
+        // Publish event to invalidate user data cache after transaction commits
+        eventPublisher.publishEvent(
+            UserUpdatedEvent(
+                source = this,
+                userId = updatedUser.id!!,
+                operation = UserOperation.PROFILE_UPDATED
+            )
+        )
+
+        return User(updatedUser)
+    }
 
     @Transactional(readOnly = false)
     fun updatePassword(userId: UUID, newPasswordHash: String) {
-        val user = userRepository.findById(userId).orElseThrow { 
-            IllegalArgumentException("User not found: $userId") 
+        val user = userRepository.findById(userId).orElseThrow {
+            IllegalArgumentException("User not found: $userId")
         }
         userRepository.save(user.copy(passwordHash = newPasswordHash))
+
+        // Publish event (PASSWORD_CHANGED doesn't invalidate cache)
+        eventPublisher.publishEvent(
+            UserUpdatedEvent(
+                source = this,
+                userId = userId,
+                operation = UserOperation.PASSWORD_CHANGED
+            )
+        )
     }
 
     @Transactional(readOnly = false)
@@ -107,6 +141,15 @@ class UserService(
 
         // Invalidate role cache
         userRoleCacheService.invalidateUserRolesCache(id)
+
+        // Publish event to invalidate user data cache
+        eventPublisher.publishEvent(
+            UserUpdatedEvent(
+                source = this,
+                userId = id,
+                operation = UserOperation.DELETED
+            )
+        )
     }
 
     fun existsByEmail(email: String): Boolean = userRepository.existsByEmail(email)
