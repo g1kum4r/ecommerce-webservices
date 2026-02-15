@@ -33,7 +33,14 @@ class AuthServiceTest {
         jwtService = mock(JwtService::class.java)
         passwordEncoder = mock(PasswordEncoder::class.java)
         authenticationManager = mock(AuthenticationManager::class.java)
-        authService = AuthService(userService, jwtService, passwordEncoder, authenticationManager)
+        authService = AuthService(
+            userService,
+            jwtService,
+            passwordEncoder,
+            authenticationManager,
+            emailService = mock(EmailService::class.java),
+            tokenService = mock(TokenService::class.java)
+        )
     }
 
     @Test
@@ -41,7 +48,7 @@ class AuthServiceTest {
         // Arrange
         val request = RegisterRequest(
             email = "test@example.com",
-            password = "password123",
+            password = "P@ssw0rd123",
             roles = setOf(Roles.CONSUMER)
         )
         val encodedPassword = "encodedPassword"
@@ -83,7 +90,7 @@ class AuthServiceTest {
         // Arrange
         val request = RegisterRequest(
             email = "admin@example.com",
-            password = "password123",
+            password = "P@ssw0rd123",
             roles = setOf(Roles.ADMIN)
         )
 
@@ -99,7 +106,7 @@ class AuthServiceTest {
         // Arrange
         val request = RegisterRequest(
             email = "existing@example.com",
-            password = "password123",
+            password = "P@ssw0rd123",
             roles = setOf(Roles.CONSUMER)
         )
 
@@ -117,7 +124,7 @@ class AuthServiceTest {
         // Arrange
         val request = LoginRequest(
             email = "test@example.com",
-            password = "password123"
+            password = "P@ssw0rd123"
         )
         val user = lakho.ecommerce.webservices.user.repositories.models.User(
             id = UUID.randomUUID(),
@@ -155,7 +162,7 @@ class AuthServiceTest {
         // Arrange
         val request = LoginRequest(
             email = "nonexistent@example.com",
-            password = "password123"
+            password = "P@ssw0rd123"
         )
 
         `when`(userService.findByEmailOrUsername(request.email)).thenReturn(null)

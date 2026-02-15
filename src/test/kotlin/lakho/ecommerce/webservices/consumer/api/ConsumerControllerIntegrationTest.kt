@@ -56,7 +56,7 @@ class ConsumerControllerIntegrationTest {
         // Register and login as consumer
         val consumerRegisterRequest = RegisterRequest(
             email = "consumer@test.com",
-            password = "password123",
+            password = "P@ssw0rd123",
             roles = setOf(Roles.CONSUMER)
         )
 
@@ -74,7 +74,7 @@ class ConsumerControllerIntegrationTest {
         // Register and login as store
         val storeRegisterRequest = RegisterRequest(
             email = "store@test.com",
-            password = "password123",
+            password = "P@ssw0rd123",
             roles = setOf(Roles.STORE)
         )
 
