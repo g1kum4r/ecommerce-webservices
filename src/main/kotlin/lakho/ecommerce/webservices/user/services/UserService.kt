@@ -76,6 +76,14 @@ class UserService(
         User(userRepository.save(user))
 
     @Transactional(readOnly = false)
+    fun updatePassword(userId: UUID, newPasswordHash: String) {
+        val user = userRepository.findById(userId).orElseThrow { 
+            IllegalArgumentException("User not found: $userId") 
+        }
+        userRepository.save(user.copy(passwordHash = newPasswordHash))
+    }
+
+    @Transactional(readOnly = false)
     fun deleteById(id: UUID) {
         userRoleRepository.deleteByUserId(id)
         userRepository.deleteById(id)

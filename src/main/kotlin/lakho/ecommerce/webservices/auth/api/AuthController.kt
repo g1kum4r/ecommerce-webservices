@@ -2,9 +2,12 @@ package lakho.ecommerce.webservices.auth.api
 
 import jakarta.validation.Valid
 import lakho.ecommerce.webservices.auth.api.models.AuthResponse
+import lakho.ecommerce.webservices.auth.api.models.ForgotPasswordRequest
 import lakho.ecommerce.webservices.auth.api.models.LoginRequest
 import lakho.ecommerce.webservices.auth.api.models.RefreshRequest
 import lakho.ecommerce.webservices.auth.api.models.RegisterRequest
+import lakho.ecommerce.webservices.auth.api.models.ResetPasswordRequest
+import lakho.ecommerce.webservices.auth.api.models.VerifyEmailRequest
 import lakho.ecommerce.webservices.auth.services.AuthService
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PostMapping
@@ -27,4 +30,22 @@ class AuthController internal constructor(private val authService: AuthService) 
     @PostMapping("/refresh")
     fun refresh(@Valid @RequestBody request: RefreshRequest): ResponseEntity<AuthResponse> =
         ResponseEntity.ok(authService.refresh(request))
+
+    @PostMapping("/verify-email")
+    fun verifyEmail(@Valid @RequestBody request: VerifyEmailRequest): ResponseEntity<Map<String, String>> {
+        authService.verifyEmail(request.token)
+        return ResponseEntity.ok(mapOf("message" to "Email verified successfully"))
+    }
+
+    @PostMapping("/forgot-password")
+    fun forgotPassword(@Valid @RequestBody request: ForgotPasswordRequest): ResponseEntity<Map<String, String>> {
+        authService.forgotPassword(request.email)
+        return ResponseEntity.ok(mapOf("message" to "Password reset email sent"))
+    }
+
+    @PostMapping("/reset-password")
+    fun resetPassword(@Valid @RequestBody request: ResetPasswordRequest): ResponseEntity<Map<String, String>> {
+        authService.resetPassword(request.token, request.newPassword)
+        return ResponseEntity.ok(mapOf("message" to "Password reset successfully"))
+    }
 }

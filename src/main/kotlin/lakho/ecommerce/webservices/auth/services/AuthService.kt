@@ -22,7 +22,9 @@ internal class AuthService(
     private val userService: UserService,
     private val jwtService: JwtService,
     private val passwordEncoder: PasswordEncoder,
-    private val authenticationManager: AuthenticationManager
+    private val authenticationManager: AuthenticationManager,
+    private val emailService: EmailService,
+    private val tokenService: TokenService
 ) {
     private val logger = LoggerFactory.getLogger(AuthService::class.java)
 
@@ -45,6 +47,16 @@ internal class AuthService(
         )
 
         logger.info("User registered successfully: userId={}, email={}", user.id, user.email)
+
+        // Create a verification token and send an email
+        try {
+            val verificationToken = tokenService.createEmailVerificationToken(user.id)
+            emailService.sendVerificationEmail(user.email, user.username, verificationToken.token)
+            logger.info("Verification email sent: userId={}, email={}", user.id, user.email)
+        } catch (e: Exception) {
+            logger.error("Failed to send verification email: userId={}, email={}", user.id, user.email, e)
+            // Don't fail registration if email fails
+        }
 
         return generateAuthResponse(user)
     }
@@ -87,6 +99,50 @@ internal class AuthService(
         logger.info("Token refreshed successfully: userId={}, email={}", secureUser.id, secureUser.email)
 
         return generateAuthResponse(secureUser.toUserModel())
+    }
+
+    fun verifyEmail(token: String) {
+        val verificationToken = tokenService.validateEmailVerificationToken(token)
+        tokenService.markEmailAsVerified(token)
+        
+        logger.info("Email verified successfully: userId={}", verificationToken.userId)
+    }
+
+    fun forgotPassword(email: String) {
+        val user = userService.findByEmailOrUsername(email)
+            ?: throw UsernameNotFoundException("User not found: $email")
+
+        try {
+            val resetToken = tokenService.createPasswordResetToken(user.id)
+            emailService.sendPasswordResetEmail(user.email, user.username, resetToken.token)
+            logger.info("Password reset email sent: userId={}, email={}", user.id, user.email)
+        } catch (e: Exception) {
+            logger.error("Failed to send password reset email: userId={}, email={}", user.id, user.email, e)
+            throw IllegalStateException("Failed to send password reset email")
+        }
+    }
+
+    @Transactional
+    fun resetPassword(token: String, newPassword: String) {
+        val resetToken = tokenService.validatePasswordResetToken(token)
+        
+        val user = userService.findById(resetToken.userId)
+            ?: throw UsernameNotFoundException("User not found")
+
+        val encodedPassword = passwordEncoder.encode(newPassword)
+            ?: throw IllegalStateException("Password encoding failed")
+
+        userService.updatePassword(user.id, encodedPassword)
+        tokenService.markPasswordResetTokenAsUsed(token)
+
+        try {
+            emailService.sendPasswordResetConfirmationEmail(user.email, user.username)
+        } catch (e: Exception) {
+            logger.error("Failed to send password reset confirmation email: userId={}", user.id, e)
+            // Don't fail the reset if confirmation email fails
+        }
+
+        logger.info("Password reset successfully: userId={}, email={}", user.id, user.email)
     }
 
     private fun generateAuthResponse(user: User): AuthResponse {
