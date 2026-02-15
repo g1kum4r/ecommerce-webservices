@@ -2,6 +2,8 @@ package lakho.ecommerce.webservices.config
 
 import lakho.ecommerce.webservices.auth.services.JwtService
 import lakho.ecommerce.webservices.auth.services.OAuth2AuthenticationSuccessHandler
+import lakho.ecommerce.webservices.config.security.CustomAccessDeniedHandler
+import lakho.ecommerce.webservices.config.security.CustomAuthenticationEntryPoint
 import lakho.ecommerce.webservices.config.security.filters.JwtAuthenticationFilter
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -19,7 +21,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 internal class SecurityConfig(
     private val jwtService: JwtService,
-    private val oauth2SuccessHandler: OAuth2AuthenticationSuccessHandler
+    private val oauth2SuccessHandler: OAuth2AuthenticationSuccessHandler,
+    private val authenticationEntryPoint: CustomAuthenticationEntryPoint,
+    private val accessDeniedHandler: CustomAccessDeniedHandler
 ) {
 
     @Bean
@@ -52,6 +56,11 @@ internal class SecurityConfig(
                     .requestMatchers("/api/store/**").hasRole("STORE")
                     .requestMatchers("/api/consumer/**").hasRole("CONSUMER")
                     .anyRequest().authenticated()
+            }
+            .exceptionHandling { exceptions ->
+                exceptions
+                    .authenticationEntryPoint(authenticationEntryPoint)
+                    .accessDeniedHandler(accessDeniedHandler)
             }
             .oauth2Login { oauth2 ->
                 oauth2

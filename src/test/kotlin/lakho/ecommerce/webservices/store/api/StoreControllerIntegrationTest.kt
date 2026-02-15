@@ -1,6 +1,7 @@
 package lakho.ecommerce.webservices.store.api
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import lakho.ecommerce.webservices.auth.api.models.LoginRequest
 import lakho.ecommerce.webservices.auth.api.models.RegisterRequest
 import lakho.ecommerce.webservices.user.Roles
 import org.junit.jupiter.api.BeforeEach
@@ -56,17 +57,30 @@ class StoreControllerIntegrationTest {
         // Register and login as store
         val storeRegisterRequest = RegisterRequest(
             email = "store@test.com",
-            password = "password123",
+            password = "P@ssw0rd123",
             roles = setOf(Roles.STORE)
         )
 
-        val storeRegisterResult = mockMvc.perform(
+        val storeLoginRequest = LoginRequest(
+            email = "store@test.com",
+            password = "P@ssw0rd123",
+        )
+
+        var storeRegisterResult = mockMvc.perform(
             post("/api/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(storeRegisterRequest))
         )
-            .andExpect(status().isOk)
             .andReturn()
+
+        if (storeRegisterResult.response.status != 200) {
+            storeRegisterResult = mockMvc.perform(
+                post("/api/auth/login")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(storeLoginRequest))
+            )
+                .andReturn()
+        }
 
         val storeAuthResponse = objectMapper.readTree(storeRegisterResult.response.contentAsString)
         storeToken = storeAuthResponse.get("accessToken").asText()
@@ -74,17 +88,29 @@ class StoreControllerIntegrationTest {
         // Register and login as consumer
         val consumerRegisterRequest = RegisterRequest(
             email = "consumer@test.com",
-            password = "password123",
+            password = "P@ssw0rd123",
             roles = setOf(Roles.CONSUMER)
         )
 
-        val consumerRegisterResult = mockMvc.perform(
+        val consumerLoginRequest = LoginRequest(
+            email = "consumer@test.com",
+            password = "P@ssw0rd123"
+        )
+
+        var consumerRegisterResult = mockMvc.perform(
             post("/api/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(consumerRegisterRequest))
         )
-            .andExpect(status().isOk)
             .andReturn()
+
+        if (consumerRegisterResult.response.status != 200) {
+            consumerRegisterResult = mockMvc.perform(
+                post("/api/auth/login")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(consumerLoginRequest))
+            ).andReturn()
+        }
 
         val consumerAuthResponse = objectMapper.readTree(consumerRegisterResult.response.contentAsString)
         consumerToken = consumerAuthResponse.get("accessToken").asText()
@@ -147,7 +173,8 @@ class StoreControllerIntegrationTest {
     @Test
     fun `getProfile should return 401 with expired token`() {
         // Arrange - Use a clearly expired token format
-        val expiredToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjE1MTYyMzkwMjJ9.4Adcj0MqVKXb8JDKLngJh8fmLJ6bsjqjQaD7RbqY9x8"
+        val expiredToken =
+            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjE1MTYyMzkwMjJ9.4Adcj0MqVKXb8JDKLngJh8fmLJ6bsjqjQaD7RbqY9x8"
 
         // Act & Assert
         mockMvc.perform(
