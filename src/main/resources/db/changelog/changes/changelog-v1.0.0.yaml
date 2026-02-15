@@ -5,3 +5,6 @@ databaseChangeLog:
   - include:
       file: db/changelog/v1.0.0/email/changelog-email-tokens.yaml
       relativeToChangelogFile: false
+  - include:
+      file: db/changelog/v1.0.0/event/changelog-event.yaml
+      relativeToChangelogFile: false

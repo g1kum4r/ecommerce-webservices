@@ -39,7 +39,8 @@ class AuthServiceTest {
             passwordEncoder,
             authenticationManager,
             emailService = mock(EmailService::class.java),
-            tokenService = mock(TokenService::class.java)
+            tokenService = mock(TokenService::class.java),
+            eventPublisher = mock(org.springframework.context.ApplicationEventPublisher::class.java)
         )
     }
 

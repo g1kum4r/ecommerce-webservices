@@ -4,13 +4,15 @@ import lakho.ecommerce.webservices.auth.api.models.AuthResponse
 import lakho.ecommerce.webservices.auth.api.models.LoginRequest
 import lakho.ecommerce.webservices.auth.api.models.RefreshRequest
 import lakho.ecommerce.webservices.auth.api.models.RegisterRequest
+import lakho.ecommerce.webservices.event.events.PasswordResetEvent
+import lakho.ecommerce.webservices.event.events.UserRegisteredEvent
 import lakho.ecommerce.webservices.user.Roles
 import lakho.ecommerce.webservices.user.repositories.models.User
 import lakho.ecommerce.webservices.user.repositories.models.toUserModel
 import lakho.ecommerce.webservices.user.services.UserService
 import org.slf4j.LoggerFactory
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.security.authentication.AuthenticationManager
-import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -24,7 +26,8 @@ internal class AuthService(
     private val passwordEncoder: PasswordEncoder,
     private val authenticationManager: AuthenticationManager,
     private val emailService: EmailService,
-    private val tokenService: TokenService
+    private val tokenService: TokenService,
+    private val eventPublisher: ApplicationEventPublisher
 ) {
     private val logger = LoggerFactory.getLogger(AuthService::class.java)
 
@@ -48,14 +51,24 @@ internal class AuthService(
 
         logger.info("User registered successfully: userId={}, email={}", user.id, user.email)
 
-        // Create a verification token and send an email
+        // Create a verification token and publish event
         try {
             val verificationToken = tokenService.createEmailVerificationToken(user.id)
-            emailService.sendVerificationEmail(user.email, user.username, verificationToken.token)
-            logger.info("Verification email sent: userId={}, email={}", user.id, user.email)
+
+            // Publish UserRegisteredEvent - listener will handle email sending
+            eventPublisher.publishEvent(
+                UserRegisteredEvent(
+                    source = this,
+                    userId = user.id,
+                    email = user.email,
+                    username = user.username,
+                    verificationToken = verificationToken.token
+                )
+            )
+            logger.info("UserRegisteredEvent published: userId={}, email={}", user.id, user.email)
         } catch (e: Exception) {
-            logger.error("Failed to send verification email: userId={}, email={}", user.id, user.email, e)
-            // Don't fail registration if email fails
+            logger.error("Failed to publish UserRegisteredEvent: userId={}, email={}", user.id, user.email, e)
+            // Don't fail registration if event publishing fails
         }
 
         return generateAuthResponse(user)
@@ -135,11 +148,20 @@ internal class AuthService(
         userService.updatePassword(user.id, encodedPassword)
         tokenService.markPasswordResetTokenAsUsed(token)
 
+        // Publish PasswordResetEvent - listener will handle confirmation email
         try {
-            emailService.sendPasswordResetConfirmationEmail(user.email, user.username)
+            eventPublisher.publishEvent(
+                PasswordResetEvent(
+                    source = this,
+                    userId = user.id,
+                    email = user.email,
+                    username = user.username
+                )
+            )
+            logger.info("PasswordResetEvent published: userId={}, email={}", user.id, user.email)
         } catch (e: Exception) {
-            logger.error("Failed to send password reset confirmation email: userId={}", user.id, e)
-            // Don't fail the reset if confirmation email fails
+            logger.error("Failed to publish PasswordResetEvent: userId={}", user.id, e)
+            // Don't fail the reset if event publishing fails
         }
 
         logger.info("Password reset successfully: userId={}, email={}", user.id, user.email)

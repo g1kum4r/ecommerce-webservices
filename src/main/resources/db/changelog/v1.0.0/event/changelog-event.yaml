@@ -1,0 +1,10 @@
+databaseChangeLog:
+  - changeSet:
+      id: "event-tables.v1"
+      author: "G1"
+      failOnError: true
+      runOnChange: true
+      changes:
+        - sqlFile:
+            path: create-events-table.sql
+            relativeToChangelogFile: true
