@@ -18,6 +18,7 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.whenever
 import org.mockito.quality.Strictness
 import org.springframework.data.redis.core.RedisTemplate
+import org.springframework.data.redis.core.SetOperations
 import org.springframework.data.redis.core.ValueOperations
 import java.time.Duration
 import java.util.*
@@ -35,6 +36,9 @@ class EventServiceTest {
     @Mock
     private lateinit var valueOperations: ValueOperations<String, Any>
 
+    @Mock
+    private lateinit var setOperations: SetOperations<String, Any>
+
     private lateinit var objectMapper: ObjectMapper
     private lateinit var eventService: EventService
 
@@ -48,34 +52,40 @@ class EventServiceTest {
         eventService = EventService(eventRepository, redisTemplate, objectMapper)
 
         whenever(redisTemplate.opsForValue()).thenReturn(valueOperations)
+        whenever(redisTemplate.opsForSet()).thenReturn(setOperations)
+        whenever(redisTemplate.expire(any(), any<Duration>())).thenReturn(true)
     }
 
     @Test
     fun `createEvent should save event to database and cache`() {
         // Arrange
-        val eventType = "USER_REGISTERED"
-        val metadata = mapOf("username" to "testuser", "verificationToken" to "token123")
+        val category = "APP_FLOW"
+        val type = "USER_REGISTERED"
+        val body = mapOf(
+            "userId" to testUserId.toString(),
+            "email" to testEmail,
+            "username" to "testuser",
+            "verificationToken" to "token123"
+        )
 
         val savedEvent = Event(
             id = testEventId,
-            eventType = eventType,
-            userId = testUserId,
-            email = testEmail,
-            metadata = objectMapper.writeValueAsString(metadata),
+            category = category,
+            type = type,
+            body = objectMapper.valueToTree(body),
             status = EventStatus.PENDING
         )
 
         whenever(eventRepository.save(any<Event>())).thenReturn(savedEvent)
 
         // Act
-        val result = eventService.createEvent(eventType, testUserId, testEmail, metadata)
+        val result = eventService.createEvent(category, type, body)
 
         // Assert
         assertNotNull(result)
         assertEquals(testEventId, result.id)
-        assertEquals(eventType, result.eventType)
-        assertEquals(testUserId, result.userId)
-        assertEquals(testEmail, result.email)
+        assertEquals(category, result.category)
+        assertEquals(type, result.type)
         assertEquals(EventStatus.PENDING, result.status)
 
         verify(eventRepository).save(any<Event>())
@@ -87,9 +97,9 @@ class EventServiceTest {
         // Arrange
         val cachedEvent = Event(
             id = testEventId,
-            eventType = "USER_REGISTERED",
-            userId = testUserId,
-            email = testEmail,
+            category = "APP_FLOW",
+            type = "USER_REGISTERED",
+            body = objectMapper.valueToTree(mapOf("userId" to testUserId.toString(), "email" to testEmail)),
             status = EventStatus.PENDING
         )
 
@@ -110,9 +120,9 @@ class EventServiceTest {
         // Arrange
         val event = Event(
             id = testEventId,
-            eventType = "USER_REGISTERED",
-            userId = testUserId,
-            email = testEmail,
+            category = "APP_FLOW",
+            type = "USER_REGISTERED",
+            body = objectMapper.valueToTree(mapOf("userId" to testUserId.toString(), "email" to testEmail)),
             status = EventStatus.PENDING
         )
 
@@ -135,9 +145,9 @@ class EventServiceTest {
         // Arrange
         val event = Event(
             id = testEventId,
-            eventType = "USER_REGISTERED",
-            userId = testUserId,
-            email = testEmail,
+            category = "APP_FLOW",
+            type = "USER_REGISTERED",
+            body = objectMapper.valueToTree(mapOf("userId" to testUserId.toString(), "email" to testEmail)),
             status = EventStatus.PENDING,
             attemptCount = 0
         )
@@ -165,9 +175,9 @@ class EventServiceTest {
         // Arrange
         val event = Event(
             id = testEventId,
-            eventType = "USER_REGISTERED",
-            userId = testUserId,
-            email = testEmail,
+            category = "APP_FLOW",
+            type = "USER_REGISTERED",
+            body = objectMapper.valueToTree(mapOf("userId" to testUserId.toString(), "email" to testEmail)),
             status = EventStatus.PROCESSING
         )
 
@@ -192,9 +202,9 @@ class EventServiceTest {
         // Arrange
         val event = Event(
             id = testEventId,
-            eventType = "USER_REGISTERED",
-            userId = testUserId,
-            email = testEmail,
+            category = "APP_FLOW",
+            type = "USER_REGISTERED",
+            body = objectMapper.valueToTree(mapOf("userId" to testUserId.toString(), "email" to testEmail)),
             status = EventStatus.PROCESSING,
             attemptCount = 1
         )
@@ -221,9 +231,9 @@ class EventServiceTest {
         val eventType = "USER_REGISTERED"
         val event = Event(
             id = testEventId,
-            eventType = eventType,
-            userId = testUserId,
-            email = testEmail,
+            category = "APP_FLOW",
+            type = eventType,
+            body = objectMapper.valueToTree(mapOf("userId" to testUserId.toString(), "email" to testEmail)),
             status = EventStatus.PENDING
         )
 
@@ -245,16 +255,16 @@ class EventServiceTest {
         val pendingEvents = listOf(
             Event(
                 id = UUID.randomUUID(),
-                eventType = "USER_REGISTERED",
-                userId = testUserId,
-                email = testEmail,
+                category = "APP_FLOW",
+                type = "USER_REGISTERED",
+                body = objectMapper.valueToTree(mapOf("userId" to testUserId.toString(), "email" to testEmail)),
                 status = EventStatus.PENDING
             ),
             Event(
                 id = UUID.randomUUID(),
-                eventType = "PASSWORD_RESET",
-                userId = testUserId,
-                email = testEmail,
+                category = "APP_FLOW",
+                type = "PASSWORD_RESET",
+                body = objectMapper.valueToTree(mapOf("userId" to testUserId.toString(), "email" to testEmail)),
                 status = EventStatus.PENDING
             )
         )

@@ -1,12 +1,27 @@
 package lakho.ecommerce.webservices.event.events
 
-import org.springframework.context.ApplicationEvent
+import java.time.Instant
 import java.util.*
 
+/**
+ * Event triggered when a new user successfully registers.
+ * Sends a verification email to the user.
+ */
 class UserRegisteredEvent(
     source: Any,
-    val userId: UUID,
-    val email: String,
-    val username: String,
-    val verificationToken: String
-) : ApplicationEvent(source)
+    userId: UUID,
+    email: String,
+    username: String,
+    val verificationToken: String,
+    eventId: UUID = UUID.randomUUID(),
+    timestamp: Instant = Instant.now()
+) : SendEmailEvent(source, userId, email, username, eventId, timestamp) {
+
+    override fun getEventType(): String = "USER_REGISTERED"
+
+    override fun getEmailTemplate(): EmailTemplate = EmailTemplate.USER_VERIFICATION
+
+    override fun getEmailData(): Map<String, Any> = mapOf(
+        "verificationToken" to verificationToken
+    )
+}

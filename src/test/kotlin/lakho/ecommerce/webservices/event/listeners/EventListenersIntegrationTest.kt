@@ -98,9 +98,14 @@ class EventListenersIntegrationTest {
         // Assert
         val savedEvent = eventService.findLatestByEventTypeAndUserId("USER_REGISTERED", testUserId)
         assertNotNull(savedEvent)
-        assertEquals("USER_REGISTERED", savedEvent?.eventType)
-        assertEquals(testUserId, savedEvent?.userId)
-        assertEquals(testEmail, savedEvent?.email)
+        assertEquals("USER_REGISTERED", savedEvent?.type)
+        assertEquals("APP_FLOW", savedEvent?.category)
+
+        // Verify body contains userId and email
+        val userIdFromBody = savedEvent?.body?.get("userId")?.asText()
+        val emailFromBody = savedEvent?.body?.get("email")?.asText()
+        assertEquals(testUserId.toString(), userIdFromBody)
+        assertEquals(testEmail, emailFromBody)
 
         // Event should be completed and removed from cache
         val eventById = eventService.findById(savedEvent!!.id)
@@ -130,9 +135,14 @@ class EventListenersIntegrationTest {
         // Assert
         val savedEvent = eventService.findLatestByEventTypeAndUserId("PASSWORD_RESET", testUserId)
         assertNotNull(savedEvent)
-        assertEquals("PASSWORD_RESET", savedEvent?.eventType)
-        assertEquals(testUserId, savedEvent?.userId)
-        assertEquals(testEmail, savedEvent?.email)
+        assertEquals("PASSWORD_RESET", savedEvent?.type)
+        assertEquals("APP_FLOW", savedEvent?.category)
+
+        // Verify body contains userId and email
+        val userIdFromBody = savedEvent?.body?.get("userId")?.asText()
+        val emailFromBody = savedEvent?.body?.get("email")?.asText()
+        assertEquals(testUserId.toString(), userIdFromBody)
+        assertEquals(testEmail, emailFromBody)
 
         // Event should be completed and removed from cache
         val dbEvent = eventRepository.findById(savedEvent!!.id)

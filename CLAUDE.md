@@ -86,13 +86,36 @@ Claude Action:
 
 #### 3. **"Add/modify database schema"**
 **Required Actions:**
-1. **Never modify existing migrations** - Always create new changesets
-2. Determine version: Use latest or create new (v1.1.0, v1.2.0)
-3. Create feature folder: `v{version}/{feature}/`
-4. Create changelog: `changelog-{feature}.yaml`
-5. Write SQL: Separate files per table/operation
-6. Update entity: Modify corresponding `.kt` entity file
-7. Test: Ensure Liquibase applies changes on startup
+1. **CRITICAL: Modify existing CREATE TABLE scripts directly** - If a table already has a `create-{table}-table.sql` file, modify that file directly instead of creating ALTER TABLE migrations
+2. **Never create separate migration files for existing tables during development** - Consolidate all schema changes in the original CREATE TABLE file
+3. Determine version: Use latest or create new (v1.1.0, v1.2.0)
+4. Create feature folder: `v{version}/{feature}/`
+5. Create changelog: `changelog-{feature}.yaml`
+6. Write SQL: One `create-{table}-table.sql` file per table with complete schema
+7. Update entity: Modify corresponding `.kt` entity file
+8. Test: Ensure Liquibase applies changes on startup
+
+**Example (CORRECT):**
+```sql
+-- Modify existing file: src/main/resources/db/changelog/v1.0.0/event/create-events-table.sql
+CREATE TABLE events (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    event_category VARCHAR(50) NOT NULL,  -- Add new column directly here
+    event_type VARCHAR(100) NOT NULL,
+    user_id UUID,                          -- Make nullable by removing NOT NULL
+    email VARCHAR(255),                    -- Make nullable by removing NOT NULL
+    ...
+);
+```
+
+**Example (INCORRECT):**
+```sql
+-- DON'T create: src/main/resources/db/changelog/v1.0.0/event/add-event-category-column.sql
+ALTER TABLE events ADD COLUMN event_category VARCHAR(50);
+ALTER TABLE events ALTER COLUMN user_id DROP NOT NULL;
+```
+
+**Note**: This approach applies to development/initial schema setup. In production environments with existing data, ALTER TABLE migrations would be necessary.
 
 #### 4. **"Add unit tests" or "Add integration tests"**
 **Testing Strategy:**
@@ -331,11 +354,14 @@ src/main/resources/db/changelog/
 
 ### Migration Rules (CRITICAL)
 
-1. **NEVER modify existing SQL files or changesets** - Liquibase tracks by checksum
-2. **ChangeSet ID format**: `{feature}-{description}.v{version}` (e.g., `orders-tables.v1`)
-3. **Author**: Use consistent identifier (current: "G1")
-4. **Always set**: `failOnError: true` and `runOnChange: true`
-5. **SQL file references**: Use `relativeToChangelogFile: true`
+1. **MODIFY existing CREATE TABLE scripts directly during development** - If a table's `create-{table}-table.sql` already exists, edit it directly instead of creating ALTER TABLE migrations
+2. **DO NOT create separate migration files for existing tables** - Consolidate schema changes in the original CREATE TABLE file
+3. **ChangeSet ID format**: `{feature}-{description}.v{version}` (e.g., `orders-tables.v1`)
+4. **Author**: Use consistent identifier (current: "G1")
+5. **Always set**: `failOnError: true` and `runOnChange: true`
+6. **SQL file references**: Use `relativeToChangelogFile: true`
+
+**Important**: The "modify existing CREATE TABLE" rule applies during development/initial schema setup. In production with existing data, use ALTER TABLE migrations in new changesets.
 
 ### Adding New Migration (Step-by-Step)
 

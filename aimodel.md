@@ -431,7 +431,9 @@ Access Swagger UI at: `http://localhost:8080/swagger-ui.html`
 → Create migration to insert into `roles` table → Update `SecurityConfig.kt` authorization rules
 
 **"Change database schema"**
-→ Create new changeset in appropriate version folder → Write SQL file → Update entity if needed
+→ **Development**: Modify existing `create-{table}-table.sql` directly if table already exists
+→ **Production**: Create new changeset with ALTER TABLE migration
+→ Update entity if needed
 
 ### Code Generation Best Practices
 
@@ -439,8 +441,9 @@ Access Swagger UI at: `http://localhost:8080/swagger-ui.html`
 2. **Maintain layer separation**: Don't mix controller logic in services
 3. **Use Kotlin idioms**: Data classes, null safety, extension functions
 4. **Security first**: Always consider authorization for new endpoints
-5. **Database changes**: Always create migrations, never modify existing ones
-6. **Testing**: Follow Spring Boot test patterns (use Testcontainers for integration tests)
+5. **Database changes (Development)**: Modify existing `create-{table}-table.sql` files directly instead of creating ALTER TABLE migrations
+6. **Database changes (Production)**: Use ALTER TABLE migrations in new changesets for tables with existing data
+7. **Testing**: Follow Spring Boot test patterns (use Testcontainers for integration tests)
 
 ### File Path Templates
 

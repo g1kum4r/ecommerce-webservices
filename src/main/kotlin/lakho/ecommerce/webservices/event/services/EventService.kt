@@ -1,6 +1,7 @@
 package lakho.ecommerce.webservices.event.services
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import lakho.ecommerce.webservices.event.events.BaseEvent
 import lakho.ecommerce.webservices.event.repositories.EventRepository
 import lakho.ecommerce.webservices.event.repositories.entities.Event
 import lakho.ecommerce.webservices.event.repositories.entities.EventStatus
@@ -12,6 +13,10 @@ import java.time.Duration
 import java.time.Instant
 import java.util.*
 
+/**
+ * Service for managing generic events across all categories.
+ * Handles event persistence, caching, and status management.
+ */
 @Service
 class EventService(
     private val eventRepository: EventRepository,
@@ -22,29 +27,74 @@ class EventService(
 
     companion object {
         private const val EVENT_CACHE_PREFIX = "event:"
+        private const val EVENT_CATEGORY_PREFIX = "event:category:"
         private const val EVENT_TYPE_PREFIX = "event:type:"
         private val CACHE_TTL = Duration.ofHours(24)
     }
 
+    /**
+     * Creates an event from a BaseEvent instance.
+     * Automatically extracts category, type, and metadata from the event.
+     * Combines userId and email into eventBody as JSONB.
+     */
     @Transactional
-    fun createEvent(
-        eventType: String,
-        userId: UUID,
-        email: String,
-        metadata: Map<String, Any>? = null
-    ): Event {
+    fun createEvent(baseEvent: BaseEvent, userId: UUID?, email: String?): Event {
+        // Build event body with userId, email, and metadata
+        val eventBodyMap = mutableMapOf<String, Any?>()
+        if (userId != null) eventBodyMap["userId"] = userId.toString()
+        if (email != null) eventBodyMap["email"] = email
+        eventBodyMap.putAll(baseEvent.getMetadata())
+
         val event = Event(
-            eventType = eventType,
-            userId = userId,
-            email = email,
-            metadata = metadata?.let { objectMapper.writeValueAsString(it) },
+            id = baseEvent.eventId,
+            category = baseEvent.getEventCategory().name,
+            type = baseEvent.getEventType(),
+            body = objectMapper.valueToTree(eventBodyMap),
+            metadata = null, // Can be used for additional tracking data if needed
             status = EventStatus.PENDING
         )
 
         val savedEvent = eventRepository.save(event)
         cacheEvent(savedEvent)
 
-        logger.info("Event created: eventId={}, eventType={}, userId={}", savedEvent.id, eventType, userId)
+        logger.info(
+            "Event created: eventId={}, category={}, type={}, userId={}",
+            savedEvent.id,
+            savedEvent.category,
+            savedEvent.type,
+            userId
+        )
+        return savedEvent
+    }
+
+    /**
+     * Creates an event with explicit parameters.
+     * Use this for custom event creation outside the BaseEvent hierarchy.
+     */
+    @Transactional
+    fun createEvent(
+        category: String,
+        type: String,
+        body: Map<String, Any>,
+        metadata: Map<String, Any>? = null
+    ): Event {
+        val event = Event(
+            category = category,
+            type = type,
+            body = objectMapper.valueToTree(body),
+            metadata = metadata?.let { objectMapper.valueToTree(it) },
+            status = EventStatus.PENDING
+        )
+
+        val savedEvent = eventRepository.save(event)
+        cacheEvent(savedEvent)
+
+        logger.info(
+            "Event created: eventId={}, category={}, type={}",
+            savedEvent.id,
+            category,
+            type
+        )
         return savedEvent
     }
 
@@ -67,6 +117,9 @@ class EventService(
         return event
     }
 
+    /**
+     * Finds the latest event by event type and user ID.
+     */
     fun findLatestByEventTypeAndUserId(eventType: String, userId: UUID): Event? {
         val cacheKey = "$EVENT_TYPE_PREFIX$eventType:$userId"
 
@@ -80,14 +133,21 @@ class EventService(
             }
         }
 
-        // Get from database
-        val event = eventRepository.findLatestByEventTypeAndUserId(eventType, userId)
+        // Get from database (pass userId as String for JSONB query)
+        val event = eventRepository.findLatestByEventTypeAndUserId(eventType, userId.toString())
         if (event != null) {
             cacheEvent(event)
             redisTemplate.opsForValue().set(cacheKey, event.id.toString(), CACHE_TTL)
         }
 
         return event
+    }
+
+    /**
+     * Finds events by category and status.
+     */
+    fun findByEventCategoryAndStatus(eventCategory: String, status: EventStatus): List<Event> {
+        return eventRepository.findByEventCategoryAndStatus(eventCategory, status.name)
     }
 
     @Transactional
@@ -132,10 +192,11 @@ class EventService(
             updatedAt = now
         )
 
-        logger.info("Event marked as completed: eventId={}, eventType={}", id, event.eventType)
+        logger.info("Event marked as completed: eventId={}, type={}", id, event.type)
 
         // Remove from cache after successful completion
-        removeFromCache(id, event.eventType, event.userId)
+        val userId = event.body?.get("userId")?.asText()?.let { UUID.fromString(it) }
+        removeFromCache(id, event.category, event.type, userId)
     }
 
     @Transactional
@@ -159,7 +220,7 @@ class EventService(
         )
 
         cacheEvent(updatedEvent)
-        logger.warn("Event marked as failed: eventId={}, eventType={}, attempts={}", id, event.eventType, event.attemptCount)
+        logger.warn("Event marked as failed: eventId={}, type={}, attempts={}", id, event.type, event.attemptCount)
     }
 
     fun findPendingEvents(): List<Event> {
@@ -170,18 +231,33 @@ class EventService(
         val cacheKey = "$EVENT_CACHE_PREFIX${event.id}"
         redisTemplate.opsForValue().set(cacheKey, event, CACHE_TTL)
 
-        // Also cache by event type and user ID for quick lookup
-        val typeCacheKey = "$EVENT_TYPE_PREFIX${event.eventType}:${event.userId}"
-        redisTemplate.opsForValue().set(typeCacheKey, event.id.toString(), CACHE_TTL)
+        // Cache by event category
+        val categoryCacheKey = "$EVENT_CATEGORY_PREFIX${event.category}"
+        redisTemplate.opsForSet().add(categoryCacheKey, event.id.toString())
+        redisTemplate.expire(categoryCacheKey, CACHE_TTL)
+
+        // Cache by event type and user ID for quick lookup (extract userId from body)
+        val userId = event.body?.get("userId")?.asText()?.let { UUID.fromString(it) }
+        if (userId != null) {
+            val typeCacheKey = "$EVENT_TYPE_PREFIX${event.type}:$userId"
+            redisTemplate.opsForValue().set(typeCacheKey, event.id.toString(), CACHE_TTL)
+        }
     }
 
-    private fun removeFromCache(id: UUID, eventType: String, userId: UUID) {
+    private fun removeFromCache(id: UUID, eventCategory: String, eventType: String, userId: UUID?) {
         val cacheKey = "$EVENT_CACHE_PREFIX$id"
-        val typeCacheKey = "$EVENT_TYPE_PREFIX$eventType:$userId"
-
         redisTemplate.delete(cacheKey)
-        redisTemplate.delete(typeCacheKey)
 
-        logger.debug("Event removed from cache: eventId={}", id)
+        // Remove from category set
+        val categoryCacheKey = "$EVENT_CATEGORY_PREFIX$eventCategory"
+        redisTemplate.opsForSet().remove(categoryCacheKey, id.toString())
+
+        // Remove type cache if user ID exists
+        if (userId != null) {
+            val typeCacheKey = "$EVENT_TYPE_PREFIX$eventType:$userId"
+            redisTemplate.delete(typeCacheKey)
+        }
+
+        logger.debug("Event removed from cache: eventId={}, category={}", id, eventCategory)
     }
 }

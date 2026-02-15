@@ -13,14 +13,20 @@ import java.util.*
 @Repository
 interface EventRepository : CrudRepository<Event, UUID> {
 
-    @Query("SELECT * FROM events WHERE event_type = :eventType AND user_id = :userId ORDER BY created_at DESC LIMIT 1")
+    @Query("SELECT * FROM events WHERE type = :eventType AND body->>'userId' = :userId ORDER BY created_at DESC LIMIT 1")
     fun findLatestByEventTypeAndUserId(
         @Param("eventType") eventType: String,
-        @Param("userId") userId: UUID
+        @Param("userId") userId: String
     ): Event?
 
     @Query("SELECT * FROM events WHERE status = :status ORDER BY created_at ASC")
     fun findByStatus(@Param("status") status: String): List<Event>
+
+    @Query("SELECT * FROM events WHERE category = :category AND status = :status ORDER BY created_at ASC")
+    fun findByEventCategoryAndStatus(
+        @Param("category") category: String,
+        @Param("status") status: String
+    ): List<Event>
 
     @Modifying
     @Query("""

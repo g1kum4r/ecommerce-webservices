@@ -4,12 +4,15 @@ import lakho.ecommerce.webservices.auth.services.EmailService
 import lakho.ecommerce.webservices.event.events.UserRegisteredEvent
 import lakho.ecommerce.webservices.event.services.EventService
 import org.slf4j.LoggerFactory
-import org.springframework.context.event.EventListener
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
 import org.springframework.transaction.event.TransactionPhase
 import org.springframework.transaction.event.TransactionalEventListener
 
+/**
+ * Listener for UserRegisteredEvent.
+ * Sends verification email when a new user registers.
+ */
 @Component
 class UserRegisteredEventListener(
     private val emailService: EmailService,
@@ -20,17 +23,18 @@ class UserRegisteredEventListener(
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     fun handleUserRegisteredEvent(event: UserRegisteredEvent) {
-        logger.info("Handling UserRegisteredEvent: userId={}, email={}", event.userId, event.email)
+        logger.info(
+            "Handling UserRegisteredEvent: eventId={}, userId={}, email={}",
+            event.eventId,
+            event.userId,
+            event.email
+        )
 
-        // Create event in database and cache
+        // Create event in database and cache using BaseEvent
         val savedEvent = eventService.createEvent(
-            eventType = "USER_REGISTERED",
+            baseEvent = event,
             userId = event.userId,
-            email = event.email,
-            metadata = mapOf(
-                "username" to event.username,
-                "verificationToken" to event.verificationToken
-            )
+            email = event.email
         )
 
         try {
@@ -43,9 +47,18 @@ class UserRegisteredEventListener(
             // Mark as completed and remove from cache
             eventService.markAsCompleted(savedEvent.id)
 
-            logger.info("Verification email sent successfully: userId={}, eventId={}", event.userId, savedEvent.id)
+            logger.info(
+                "Verification email sent successfully: eventId={}, userId={}",
+                savedEvent.id,
+                event.userId
+            )
         } catch (e: Exception) {
-            logger.error("Failed to send verification email: userId={}, eventId={}", event.userId, savedEvent.id, e)
+            logger.error(
+                "Failed to send verification email: eventId={}, userId={}",
+                savedEvent.id,
+                event.userId,
+                e
+            )
             eventService.markAsFailed(savedEvent.id)
         }
     }
