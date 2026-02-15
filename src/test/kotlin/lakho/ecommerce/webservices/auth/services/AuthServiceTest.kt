@@ -25,6 +25,7 @@ class AuthServiceTest {
     private lateinit var jwtService: JwtService
     private lateinit var passwordEncoder: PasswordEncoder
     private lateinit var authenticationManager: AuthenticationManager
+    private lateinit var jwtTokenCacheService: JwtTokenCacheService
     private lateinit var authService: AuthService
 
     @BeforeEach
@@ -33,6 +34,7 @@ class AuthServiceTest {
         jwtService = mock(JwtService::class.java)
         passwordEncoder = mock(PasswordEncoder::class.java)
         authenticationManager = mock(AuthenticationManager::class.java)
+        jwtTokenCacheService = mock(JwtTokenCacheService::class.java)
         authService = AuthService(
             userService,
             jwtService,
@@ -40,7 +42,8 @@ class AuthServiceTest {
             authenticationManager,
             emailService = mock(EmailService::class.java),
             tokenService = mock(TokenService::class.java),
-            eventPublisher = mock(org.springframework.context.ApplicationEventPublisher::class.java)
+            eventPublisher = mock(org.springframework.context.ApplicationEventPublisher::class.java),
+            jwtTokenCacheService = jwtTokenCacheService
         )
     }
 

@@ -1,6 +1,7 @@
 package lakho.ecommerce.webservices.config
 
 import lakho.ecommerce.webservices.auth.services.JwtService
+import lakho.ecommerce.webservices.auth.services.JwtTokenCacheService
 import lakho.ecommerce.webservices.auth.services.OAuth2AuthenticationSuccessHandler
 import lakho.ecommerce.webservices.config.security.CustomAccessDeniedHandler
 import lakho.ecommerce.webservices.config.security.CustomAuthenticationEntryPoint
@@ -21,6 +22,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 internal class SecurityConfig(
     private val jwtService: JwtService,
+    private val jwtTokenCacheService: JwtTokenCacheService,
     private val oauth2SuccessHandler: OAuth2AuthenticationSuccessHandler,
     private val authenticationEntryPoint: CustomAuthenticationEntryPoint,
     private val accessDeniedHandler: CustomAccessDeniedHandler
@@ -68,7 +70,7 @@ internal class SecurityConfig(
                     .failureUrl("/login?error=true")
             }
             .addFilterBefore(
-                JwtAuthenticationFilter(jwtService),
+                JwtAuthenticationFilter(jwtService, jwtTokenCacheService),
                 UsernamePasswordAuthenticationFilter::class.java
             )
 

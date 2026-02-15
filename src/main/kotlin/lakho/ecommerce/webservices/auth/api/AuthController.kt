@@ -1,5 +1,6 @@
 package lakho.ecommerce.webservices.auth.api
 
+import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.Valid
 import lakho.ecommerce.webservices.auth.api.models.AuthResponse
 import lakho.ecommerce.webservices.auth.api.models.ForgotPasswordRequest
@@ -47,5 +48,18 @@ class AuthController internal constructor(private val authService: AuthService) 
     fun resetPassword(@Valid @RequestBody request: ResetPasswordRequest): ResponseEntity<Map<String, String>> {
         authService.resetPassword(request.token, request.newPassword)
         return ResponseEntity.ok(mapOf("message" to "Password reset successfully"))
+    }
+
+    @PostMapping("/logout")
+    fun logout(httpRequest: HttpServletRequest): ResponseEntity<Map<String, String>> {
+        val authHeader = httpRequest.getHeader("Authorization")
+        val token = if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            authHeader.substring(7)
+        } else {
+            null
+        }
+
+        authService.logout(token)
+        return ResponseEntity.ok(mapOf("message" to "Logged out successfully"))
     }
 }

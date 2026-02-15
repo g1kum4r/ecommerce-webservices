@@ -5,6 +5,7 @@ import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.Keys
 import lakho.ecommerce.webservices.auth.JwtProperties
 import org.springframework.stereotype.Service
+import java.time.Instant
 import java.util.Date
 import javax.crypto.SecretKey
 
@@ -24,6 +25,9 @@ class JwtService(private val jwtProperties: JwtProperties) {
 
     fun extractRole(token: String): String? =
         extractClaims(token)?.get("role", String::class.java)
+
+    fun extractExpiration(token: String): Instant? =
+        extractClaims(token)?.expiration?.toInstant()
 
     fun isTokenValid(token: String): Boolean {
         val claims = extractClaims(token) ?: return false

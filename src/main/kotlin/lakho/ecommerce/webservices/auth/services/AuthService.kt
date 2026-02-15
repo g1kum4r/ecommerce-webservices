@@ -4,6 +4,7 @@ import lakho.ecommerce.webservices.auth.api.models.AuthResponse
 import lakho.ecommerce.webservices.auth.api.models.LoginRequest
 import lakho.ecommerce.webservices.auth.api.models.RefreshRequest
 import lakho.ecommerce.webservices.auth.api.models.RegisterRequest
+import lakho.ecommerce.webservices.auth.events.LoginSuccessEvent
 import lakho.ecommerce.webservices.event.events.PasswordResetEvent
 import lakho.ecommerce.webservices.event.events.UserRegisteredEvent
 import lakho.ecommerce.webservices.user.Roles
@@ -27,7 +28,8 @@ internal class AuthService(
     private val authenticationManager: AuthenticationManager,
     private val emailService: EmailService,
     private val tokenService: TokenService,
-    private val eventPublisher: ApplicationEventPublisher
+    private val eventPublisher: ApplicationEventPublisher,
+    private val jwtTokenCacheService: JwtTokenCacheService
 ) {
     private val logger = LoggerFactory.getLogger(AuthService::class.java)
 
@@ -167,11 +169,45 @@ internal class AuthService(
         logger.info("Password reset successfully: userId={}, email={}", user.id, user.email)
     }
 
+    fun logout(accessToken: String?) {
+        if (accessToken == null) {
+            logger.warn("Logout attempt without token")
+            return
+        }
+
+        try {
+            jwtTokenCacheService.removeAccessToken(accessToken)
+            logger.info("User logged out successfully")
+        } catch (e: Exception) {
+            logger.error("Failed to remove token from cache during logout", e)
+            throw IllegalStateException("Logout failed")
+        }
+    }
+
     private fun generateAuthResponse(user: User): AuthResponse {
         val roles = user.roles.joinToString(",") { it.name }
+        val accessToken = jwtService.generateAccessToken(user.email, roles)
+        val refreshToken = jwtService.generateRefreshToken(user.email, roles)
+
+        // Publish LoginSuccessEvent to cache tokens in Redis
+        try {
+            eventPublisher.publishEvent(
+                LoginSuccessEvent(
+                    source = this,
+                    email = user.email,
+                    accessToken = accessToken,
+                    refreshToken = refreshToken
+                )
+            )
+            logger.debug("LoginSuccessEvent published: email={}", user.email)
+        } catch (e: Exception) {
+            logger.error("Failed to publish LoginSuccessEvent: email={}", user.email, e)
+            // Don't fail auth if event publishing fails
+        }
+
         return AuthResponse(
-            accessToken = jwtService.generateAccessToken(user.email, roles),
-            refreshToken = jwtService.generateRefreshToken(user.email, roles)
+            accessToken = accessToken,
+            refreshToken = refreshToken
         )
     }
 }
