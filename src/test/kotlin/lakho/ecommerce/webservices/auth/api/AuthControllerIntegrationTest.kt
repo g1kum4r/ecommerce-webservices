@@ -102,7 +102,7 @@ class AuthControllerIntegrationTest {
         val request = RegisterRequest(
             email = "newstore@example.com",
             password = "P@ssw0rd123",
-            roles = setOf(Roles.STORE)
+            roles = setOf(Roles.STORE_OWNER)
         )
 
         // Act & Assert
@@ -329,7 +329,7 @@ class AuthControllerIntegrationTest {
         val request = RegisterRequest(
             email = "multirole@example.com",
             password = "P@ssw0rd123",
-            roles = setOf(Roles.CONSUMER, Roles.STORE)
+            roles = setOf(Roles.CONSUMER, Roles.STORE_OWNER)
         )
 
         // Act & Assert

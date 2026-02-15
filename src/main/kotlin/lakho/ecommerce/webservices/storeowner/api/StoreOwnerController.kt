@@ -1,7 +1,7 @@
-package lakho.ecommerce.webservices.store.api
+package lakho.ecommerce.webservices.storeowner.api
 
-import lakho.ecommerce.webservices.store.api.models.StoreProfile
-import lakho.ecommerce.webservices.store.services.StoreService
+import lakho.ecommerce.webservices.storeowner.api.models.StoreProfile
+import lakho.ecommerce.webservices.storeowner.services.StoreService
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.GetMapping
@@ -9,8 +9,8 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/api/store")
-class StoreController(private val storeService: StoreService) {
+@RequestMapping("/api/storeowner")
+class StoreOwnerController(private val storeService: StoreService) {
 
     @GetMapping("/profile")
     fun getProfile(authentication: Authentication): ResponseEntity<StoreProfile> {

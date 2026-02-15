@@ -88,7 +88,7 @@ class ConsumerControllerIntegrationTest {
         val storeRegisterRequest = RegisterRequest(
             email = "store@test.com",
             password = "P@ssw0rd123",
-            roles = setOf(Roles.STORE)
+            roles = setOf(Roles.STORE_OWNER)
         )
 
         val storeRegisterResult = mockMvc.perform(

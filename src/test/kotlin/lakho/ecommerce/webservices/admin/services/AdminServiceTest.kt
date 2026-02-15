@@ -43,7 +43,7 @@ class AdminServiceTest {
             id = UUID.randomUUID(),
             email = "user2@example.com",
             username = "user2",
-            roles = setOf(Role(2, Roles.STORE.name)),
+            roles = setOf(Role(2, Roles.STORE_OWNER.name)),
             accountExpired = false,
             accountLocked = false,
             credentialsExpired = false,
@@ -101,7 +101,7 @@ class AdminServiceTest {
             id = UUID.randomUUID(),
             email = "store@example.com",
             username = "store",
-            roles = setOf(Role(1, Roles.STORE.name)),
+            roles = setOf(Role(1, Roles.STORE_OWNER.name)),
             accountExpired = false,
             accountLocked = false,
             credentialsExpired = false,
@@ -110,7 +110,7 @@ class AdminServiceTest {
         val pageable = PageRequest.of(0, 10)
         val page = PageImpl(listOf(store), pageable, 1)
 
-        `when`(userService.findByRoles(setOf(Roles.STORE), pageable)).thenReturn(page)
+        `when`(userService.findByRoles(setOf(Roles.STORE_OWNER), pageable)).thenReturn(page)
 
         // Act
         val result = adminService.getStores(pageable)
@@ -118,8 +118,8 @@ class AdminServiceTest {
         // Assert
         assertEquals(1, result.content.size)
         assertEquals(store.email, result.content[0].email)
-        assertTrue(result.content[0].roles.contains(Role(2, Roles.STORE.name)))
-        verify(userService).findByRoles(setOf(Roles.STORE), pageable)
+        assertTrue(result.content[0].roles.contains(Role(1, Roles.STORE_OWNER.name)))
+        verify(userService).findByRoles(setOf(Roles.STORE_OWNER), pageable)
     }
 
     @Test

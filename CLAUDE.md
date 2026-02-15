@@ -67,8 +67,8 @@ Claude Action:
   ✓ Create: OrderController.kt (api/), OrderService.kt (services/), OrderRepository.kt (repositories/)
   ✓ Create: Order.kt entity in repositories/entities/
   ✓ Create: SQL migration in db/changelog/v1.1.0/store/create-orders-table.sql
-  ✓ Update: SecurityConfig.kt to add /api/store/orders/** → hasRole("STORE")
-  ✓ Pattern: Follow existing StoreController structure
+  ✓ Update: SecurityConfig.kt to add /api/storeowner/orders/** → hasRole("STORE_OWNER")
+  ✓ Pattern: Follow existing StoreOwnerController structure
 ```
 
 #### 2. **"Fix authentication/authorization issue"**
@@ -182,7 +182,7 @@ lakho.ecommerce.webservices/
 │   └── package-info.java  # Spring Modulith module definition
 │
 ├── admin/              # Admin-specific operations (user management)
-├── store/              # Store-specific operations (inventory, orders)
+├── storeowner/         # Store owner-specific operations (inventory, orders)
 ├── consumer/           # Consumer-specific operations (shopping, reviews)
 │
 └── config/             # Cross-cutting concerns
@@ -231,7 +231,7 @@ lakho.ecommerce.webservices/
    → AuthController.register()
    → AuthService.register(RegisterRequest)
    → UserService creates User with hashed password (BCrypt)
-   → RoleService assigns roles (ADMIN/STORE/CONSUMER)
+   → RoleService assigns roles (ADMIN/STORE_OWNER/CONSUMER)
    → JwtService.generateTokens()
    → Returns: AuthResponse { accessToken, refreshToken }
 
@@ -275,7 +275,7 @@ lakho.ecommerce.webservices/
 users (id UUID, email, username, password_hash, first_name, last_name,
        account_expired, account_locked, credentials_expired, enabled,
        created_at, updated_at)
-roles (id INTEGER, name)  # Values: "ADMIN", "STORE", "CONSUMER"
+roles (id INTEGER, name)  # Values: "ADMIN", "STORE_OWNER", "CONSUMER"
 user_roles (user_id UUID, role_id INTEGER)  # Many-to-many junction table
 ```
 
@@ -293,7 +293,7 @@ user_roles (user_id UUID, role_id INTEGER)  # Many-to-many junction table
         .requestMatchers("/api/auth/**", "/login/**", "/oauth2/**").permitAll()  // Public
         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
         .requestMatchers("/api/admin/**").hasRole("ADMIN")           // Admin only
-        .requestMatchers("/api/store/**").hasRole("STORE")           // Store only
+        .requestMatchers("/api/storeowner/**").hasRole("STORE_OWNER")           // Store owner only
         .requestMatchers("/api/consumer/**").hasRole("CONSUMER")     // Consumer only
         .anyRequest().authenticated()                                // All others require auth
 }
@@ -646,7 +646,7 @@ data class User(
 ### Security Checklist for New Endpoints
 
 - [ ] Add endpoint to `SecurityConfig.kt` authorization rules
-- [ ] Specify required role: `hasRole("ADMIN")` / `hasRole("STORE")` / `hasRole("CONSUMER")`
+- [ ] Specify required role: `hasRole("ADMIN")` / `hasRole("STORE_OWNER")` / `hasRole("CONSUMER")`
 - [ ] Public endpoints: Add to `.requestMatchers("/api/your/path/**").permitAll()`
 - [ ] Test with JWT token in `Authorization: Bearer {token}` header
 - [ ] Verify 401 (Unauthorized) without token
@@ -884,7 +884,7 @@ GET    /api/admin/consumers?page=0&size=10       # List consumers (paginated)
 GET    /api/admin/stores?page=0&size=10          # List stores (paginated)
 
 # Store Only
-GET    /api/store/profile       # Get authenticated store's profile
+GET    /api/storeowner/profile       # Get authenticated store owner's profile
 
 # Consumer Only
 GET    /api/consumer/profile    # Get authenticated consumer's profile

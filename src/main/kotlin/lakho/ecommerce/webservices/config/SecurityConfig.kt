@@ -55,7 +55,7 @@ internal class SecurityConfig(
                     .requestMatchers("/api/auth/**", "/login/**", "/oauth2/**").permitAll()
                     .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                     .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                    .requestMatchers("/api/store/**").hasRole("STORE")
+                    .requestMatchers("/api/storeowner/**").hasRole("STORE_OWNER")
                     .requestMatchers("/api/consumer/**").hasRole("CONSUMER")
                     .anyRequest().authenticated()
             }

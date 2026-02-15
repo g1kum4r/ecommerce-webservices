@@ -31,7 +31,7 @@ lakho.ecommerce.webservices/
 ├── auth/           # Authentication & JWT management
 ├── user/           # User domain (entities, repositories)
 ├── admin/          # Admin operations
-├── store/          # Store management
+├── storeowner/     # Store owner management
 ├── consumer/       # Consumer operations
 └── config/         # Cross-cutting configurations (Security, OpenAPI, JWT filters)
 ```
@@ -71,7 +71,7 @@ user/
 ### Security Architecture
 - **Stateless sessions** - No server-side session storage
 - **JWT-based authentication** - Access tokens (15 min) + Refresh tokens (7 days)
-- **Role-based authorization** - Three roles: ADMIN, STORE, CONSUMER
+- **Role-based authorization** - Three roles: ADMIN, STORE_OWNER, CONSUMER
 - **BCrypt password encryption**
 - **Custom JWT filter** (`JwtAuthenticationFilter`) runs before Spring Security's authentication filter
 
@@ -81,7 +81,7 @@ All endpoints follow RESTful conventions:
 ```
 /api/auth/**        - Public (registration, login, token refresh)
 /api/admin/**       - ADMIN role only
-/api/store/**       - STORE role only
+/api/storeowner/**  - STORE_OWNER role only
 /api/consumer/**    - CONSUMER role only
 /v3/api-docs/**     - OpenAPI documentation (public)
 /swagger-ui/**      - Swagger UI (public)
@@ -100,8 +100,8 @@ All endpoints follow RESTful conventions:
 - `GET /api/admin/consumers?page=0&size=10` - List all consumers (paginated)
 - `GET /api/admin/stores?page=0&size=10` - List all stores (paginated)
 
-**Store Endpoints (STORE role required):**
-- `GET /api/store/profile` - Get authenticated store's profile
+**Store Owner Endpoints (STORE_OWNER role required):**
+- `GET /api/storeowner/profile` - Get authenticated store owner's profile
 
 **Consumer Endpoints (CONSUMER role required):**
 - `GET /api/consumer/profile` - Get authenticated consumer's profile
@@ -242,7 +242,7 @@ src/main/kotlin/lakho/ecommerce/webservices/
 │   └── services/
 │       └── AdminService.kt
 │
-├── store/                          # Store module
+├── storeowner/                     # Store owner module
 │   ├── api/
 │   │   ├── StoreController.kt
 │   │   └── models/
@@ -388,7 +388,7 @@ Access Swagger UI at: `http://localhost:8080/swagger-ui.html`
 
 ### User Roles System
 - **Database**: Many-to-many relationship (users ↔ user_roles ↔ roles)
-- **Roles**: ADMIN, STORE, CONSUMER (stored without `ROLE_` prefix)
+- **Roles**: ADMIN, STORE_OWNER, CONSUMER (stored without `ROLE_` prefix)
 - **Spring Security**: Automatically adds `ROLE_` prefix
 - **Authorization**: `@PreAuthorize` or `hasRole()` in SecurityConfig
 - **User Entity**: UUID primary key, includes firstName, lastName, account status flags (expired, locked, credentialsExpired, enabled)
@@ -512,7 +512,7 @@ Access Swagger UI at: `http://localhost:8080/swagger-ui.html`
 
 - **v1.0.0**: Initial release
   - User authentication with JWT (access + refresh tokens)
-  - Role-based authorization (ADMIN, STORE, CONSUMER)
+  - Role-based authorization (ADMIN, STORE_OWNER, CONSUMER)
   - User management with UUID primary keys
   - PostgreSQL database with Liquibase migrations
   - Redis caching setup

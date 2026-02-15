@@ -43,7 +43,7 @@ class AdminService(private val userService: UserService) {
     }
 
     fun getStores(pageable: Pageable): Page<UserSummary> {
-        return userService.findByRoles(setOf(Roles.STORE), pageable).map {
+        return userService.findByRoles(setOf(Roles.STORE_OWNER), pageable).map {
             UserSummary(
                 id = it.id,
                 username = it.username,

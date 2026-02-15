@@ -1,4 +1,4 @@
-package lakho.ecommerce.webservices.store.api.models
+package lakho.ecommerce.webservices.storeowner.api.models
 
 import java.util.UUID
 

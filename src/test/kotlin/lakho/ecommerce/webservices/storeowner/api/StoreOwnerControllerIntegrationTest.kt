@@ -1,4 +1,4 @@
-package lakho.ecommerce.webservices.store.api
+package lakho.ecommerce.webservices.storeowner.api
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import lakho.ecommerce.webservices.auth.api.models.LoginRequest
@@ -29,7 +29,7 @@ import org.testcontainers.junit.jupiter.Testcontainers
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
 @Testcontainers
-class StoreControllerIntegrationTest {
+class StoreOwnerControllerIntegrationTest {
 
     @Autowired
     private lateinit var mockMvc: MockMvc
@@ -71,7 +71,7 @@ class StoreControllerIntegrationTest {
         val storeRegisterRequest = RegisterRequest(
             email = "store@test.com",
             password = "P@ssw0rd123",
-            roles = setOf(Roles.STORE)
+            roles = setOf(Roles.STORE_OWNER)
         )
 
         val storeLoginRequest = LoginRequest(
@@ -133,7 +133,7 @@ class StoreControllerIntegrationTest {
     fun `getProfile should return store profile for authenticated store`() {
         // Act & Assert
         mockMvc.perform(
-            get("/api/store/profile")
+            get("/api/storeowner/profile")
                 .header("Authorization", "Bearer $storeToken")
         )
             .andExpect(status().isOk)
@@ -146,7 +146,7 @@ class StoreControllerIntegrationTest {
     fun `getProfile should return 401 without authentication`() {
         // Act & Assert
         mockMvc.perform(
-            get("/api/store/profile")
+            get("/api/storeowner/profile")
         )
             .andExpect(status().isUnauthorized)
     }
@@ -155,7 +155,7 @@ class StoreControllerIntegrationTest {
     fun `getProfile should return 403 for non-store user`() {
         // Act & Assert
         mockMvc.perform(
-            get("/api/store/profile")
+            get("/api/storeowner/profile")
                 .header("Authorization", "Bearer $consumerToken")
         )
             .andExpect(status().isForbidden)
@@ -165,19 +165,19 @@ class StoreControllerIntegrationTest {
     fun `getProfile should return profile with correct role`() {
         // Act & Assert
         mockMvc.perform(
-            get("/api/store/profile")
+            get("/api/storeowner/profile")
                 .header("Authorization", "Bearer $storeToken")
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.roles").isArray)
-            .andExpect(jsonPath("$.roles[0]").value("STORE"))
+            .andExpect(jsonPath("$.roles[0]").value("STORE_OWNER"))
     }
 
     @Test
     fun `getProfile should return 401 with invalid token`() {
         // Act & Assert
         mockMvc.perform(
-            get("/api/store/profile")
+            get("/api/storeowner/profile")
                 .header("Authorization", "Bearer invalid.token.here")
         )
             .andExpect(status().isUnauthorized)
@@ -191,7 +191,7 @@ class StoreControllerIntegrationTest {
 
         // Act & Assert
         mockMvc.perform(
-            get("/api/store/profile")
+            get("/api/storeowner/profile")
                 .header("Authorization", "Bearer $expiredToken")
         )
             .andExpect(status().isUnauthorized)
