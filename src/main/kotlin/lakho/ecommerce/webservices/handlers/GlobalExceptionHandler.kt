@@ -1,4 +1,4 @@
-package lakho.ecommerce.webservices.config
+package lakho.ecommerce.webservices.handlers
 
 import org.slf4j.LoggerFactory
 import org.springframework.dao.DataIntegrityViolationException

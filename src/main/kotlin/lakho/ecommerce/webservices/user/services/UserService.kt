@@ -10,6 +10,7 @@ import lakho.ecommerce.webservices.user.repositories.models.User
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.Pageable
+import org.springframework.data.jdbc.core.JdbcAggregateTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.*
@@ -18,7 +19,8 @@ import java.util.*
 class UserService(
     private val userRepository: UserRepository,
     private val userRoleRepository: UserRoleRepository,
-    private val roleRepository: RoleRepository
+    private val roleRepository: RoleRepository,
+    private val jdbcAggregateTemplate: JdbcAggregateTemplate
 ) {
 
     fun findById(id: UUID): User? {
@@ -61,12 +63,12 @@ class UserService(
         user: lakho.ecommerce.webservices.user.repositories.entities.User, roles: Set<Roles>
     ): User {
         val savedUser = userRepository.save(user)
-        roleRepository.findByNameIn(roles.map { it.name })
-            .map { UserRole(savedUser.id!!, it.id) }
-            .let { userRoleRepository.saveAll(it) }
+        val roles = roleRepository.findByNameIn(roles.map { it.name }).toSet()
 
-        val userRoles = roleRepository.findByUserId(savedUser.id!!)
-        return User(savedUser, userRoles)
+        roles.map { UserRole(savedUser.id!!, it.id) }
+            .let { jdbcAggregateTemplate.insertAll(it) }
+
+        return User(savedUser, roles)
     }
 
     @Transactional(readOnly = false)

@@ -94,6 +94,27 @@ Claude Action:
 6. Update entity: Modify corresponding `.kt` entity file
 7. Test: Ensure Liquibase applies changes on startup
 
+#### 4. **"Add unit tests" or "Add integration tests"**
+**Testing Strategy:**
+1. **Unit Tests** - For service layer (business logic)
+   - Location: `src/test/kotlin/lakho/ecommerce/webservices/{module}/services/`
+   - Mock all dependencies (repositories, external services)
+   - Test business logic in isolation
+   - Use JUnit 5 + Mockito
+   - Follow pattern: `{ServiceName}Test.kt`
+
+2. **Integration Tests** - For API layer (controllers)
+   - Location: `src/test/kotlin/lakho/ecommerce/webservices/{module}/api/`
+   - Test full API flows (controller → service → repository)
+   - Use Testcontainers for PostgreSQL
+   - Test with Spring Security enabled
+   - Verify authentication and authorization
+   - Follow pattern: `{ControllerName}IntegrationTest.kt`
+
+**Required After Creating APIs/Services:**
+- **ALWAYS add unit tests to service layers** - Test business logic with mocked dependencies
+- **ALWAYS add integration tests to API layers** - Test endpoints with authentication/authorization
+
 **Migration Template:**
 ```yaml
 # src/main/resources/db/changelog/v1.0.0/myfeature/changelog-myfeature.yaml
@@ -109,12 +130,13 @@ databaseChangeLog:
             relativeToChangelogFile: true
 ```
 
-#### 4. **"How does X work?"**
+#### 5. **"How does X work?"**
 **Reference Sections:**
 - Authentication flow → See "JWT Authentication Flow" below
 - Role system → See "Role-Based Authorization" below
 - Module structure → See "Module Architecture" below
 - Database migrations → See "Liquibase Pattern" below
+- Testing → See "Testing Strategy" section
 
 ---
 
@@ -860,38 +882,133 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 ## Testing Strategy
 
-### Unit Tests
-- Test services in isolation (mock repositories)
-- Use `@MockBean` for dependencies
-- Location: `src/test/kotlin/lakho/ecommerce/webservices/{module}/services/`
+### Unit Tests (Service Layer)
+**Purpose**: Test business logic in isolation
+**Location**: `src/test/kotlin/lakho/ecommerce/webservices/{module}/services/`
+**Pattern**: `{ServiceName}Test.kt` (e.g., `AuthServiceTest.kt`, `UserServiceTest.kt`)
 
-### Integration Tests
-- Test full API flows (controller → service → repository)
-- Use **Testcontainers** for PostgreSQL and Redis
-- Test with Spring Security enabled
-- Location: `src/test/kotlin/lakho/ecommerce/webservices/{module}/api/`
+**Guidelines:**
+- Mock all dependencies using Mockito (`mock()`, `when()`, `verify()`)
+- Test all public methods in the service
+- Cover success cases, error cases, and edge cases
+- Use JUnit 5 assertions (`assertEquals`, `assertNotNull`, `assertThrows`)
+- Never use real database or external services
 
-**Example Test:**
+**Example Unit Test:**
+```kotlin
+class AuthServiceTest {
+    private lateinit var userService: UserService
+    private lateinit var jwtService: JwtService
+    private lateinit var authService: AuthService
+
+    @BeforeEach
+    fun setup() {
+        userService = mock(UserService::class.java)
+        jwtService = mock(JwtService::class.java)
+        authService = AuthService(userService, jwtService, ...)
+    }
+
+    @Test
+    fun `register should create new user successfully`() {
+        // Arrange
+        val request = RegisterRequest(email = "test@example.com", ...)
+        `when`(userService.existsByEmail(request.email)).thenReturn(false)
+        `when`(userService.save(any(), any())).thenReturn(savedUser)
+
+        // Act
+        val response = authService.register(request)
+
+        // Assert
+        assertNotNull(response)
+        verify(userService).existsByEmail(request.email)
+        verify(userService).save(any(), any())
+    }
+}
+```
+
+### Integration Tests (API Layer)
+**Purpose**: Test full API flows with authentication/authorization
+**Location**: `src/test/kotlin/lakho/ecommerce/webservices/{module}/api/`
+**Pattern**: `{ControllerName}IntegrationTest.kt` (e.g., `AuthControllerIntegrationTest.kt`)
+
+**Guidelines:**
+- Use `@SpringBootTest` with `@AutoConfigureMockMvc` and `@Testcontainers`
+- Use Testcontainers for PostgreSQL (real database, isolated)
+- Test authentication (401 without token, 403 with wrong role)
+- Test authorization (verify role-based access control)
+- Test request validation (400 for invalid input)
+- Use `MockMvc` to perform HTTP requests
+
+**Example Integration Test:**
 ```kotlin
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
-class AuthControllerTest {
-
+@Testcontainers
+class AuthControllerIntegrationTest {
     @Autowired
     private lateinit var mockMvc: MockMvc
 
+    @Autowired
+    private lateinit var objectMapper: ObjectMapper
+
+    companion object {
+        @Container
+        val postgresContainer = PostgreSQLContainer<Nothing>("postgres:16-alpine").apply {
+            withDatabaseName("testdb")
+            withUsername("test")
+            withPassword("test")
+        }
+
+        @JvmStatic
+        @DynamicPropertySource
+        fun configureProperties(registry: DynamicPropertyRegistry) {
+            registry.add("spring.datasource.url", postgresContainer::getJdbcUrl)
+            registry.add("spring.datasource.username", postgresContainer::getUsername)
+            registry.add("spring.datasource.password", postgresContainer::getPassword)
+        }
+    }
+
     @Test
-    fun `should login successfully with valid credentials`() {
+    fun `register should create new consumer user successfully`() {
+        val request = RegisterRequest(email = "test@example.com", ...)
+
         mockMvc.perform(
-            post("/api/auth/login")
+            post("/api/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"username":"admin","password":"admin123"}""")
+                .content(objectMapper.writeValueAsString(request))
         )
         .andExpect(status().isOk)
         .andExpect(jsonPath("$.accessToken").exists())
     }
+
+    @Test
+    fun `listUsers should return 403 for non-admin user`() {
+        mockMvc.perform(
+            get("/api/admin/users")
+                .header("Authorization", "Bearer $consumerToken")
+        )
+        .andExpect(status().isForbidden)
+    }
 }
 ```
+
+### Test Coverage Requirements
+**When creating new features, ALWAYS:**
+1. **Unit tests for service layer** - Test all business logic methods
+   - Success scenarios
+   - Error handling (exceptions, validation failures)
+   - Edge cases (null values, empty lists, boundary conditions)
+
+2. **Integration tests for API layer** - Test all endpoints
+   - Public endpoints (no authentication required)
+   - Protected endpoints with valid authentication
+   - Authorization checks (403 for wrong roles)
+   - Unauthenticated access (401 without token)
+   - Input validation (400 for invalid data)
+
+**Examples of Existing Tests:**
+- Unit Tests: `AuthServiceTest.kt`, `UserServiceTest.kt`, `AdminServiceTest.kt`
+- Integration Tests: `AuthControllerIntegrationTest.kt`, `AdminControllerIntegrationTest.kt`, `StoreControllerIntegrationTest.kt`, `ConsumerControllerIntegrationTest.kt`
 
 ---
 

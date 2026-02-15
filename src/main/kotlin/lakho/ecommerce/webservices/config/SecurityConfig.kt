@@ -2,6 +2,7 @@ package lakho.ecommerce.webservices.config
 
 import lakho.ecommerce.webservices.auth.services.JwtService
 import lakho.ecommerce.webservices.auth.services.OAuth2AuthenticationSuccessHandler
+import lakho.ecommerce.webservices.config.security.filters.JwtAuthenticationFilter
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.authentication.AuthenticationManager
