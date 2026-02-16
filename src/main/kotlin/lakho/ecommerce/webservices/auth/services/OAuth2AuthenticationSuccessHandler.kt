@@ -2,10 +2,10 @@ package lakho.ecommerce.webservices.auth.services
 
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
-import lakho.ecommerce.webservices.user.Roles
-import lakho.ecommerce.webservices.user.repositories.entities.User
-import lakho.ecommerce.webservices.user.services.RoleService
-import lakho.ecommerce.webservices.user.services.UserService
+import lakho.ecommerce.webservices.common.enums.Roles
+import lakho.ecommerce.webservices.common.repositories.entities.User
+import lakho.ecommerce.webservices.common.services.RoleService
+import lakho.ecommerce.webservices.common.services.UserService
 import org.springframework.security.core.Authentication
 import org.springframework.security.oauth2.core.user.OAuth2User
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler

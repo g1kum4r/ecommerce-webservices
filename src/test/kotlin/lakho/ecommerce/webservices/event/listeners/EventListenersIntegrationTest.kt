@@ -1,11 +1,11 @@
 package lakho.ecommerce.webservices.event.listeners
 
-import lakho.ecommerce.webservices.auth.services.EmailService
+import lakho.ecommerce.webservices.common.services.EmailService
 import lakho.ecommerce.webservices.auth.events.PasswordResetEvent
 import lakho.ecommerce.webservices.auth.events.UserRegisteredEvent
-import lakho.ecommerce.webservices.event.repositories.EventRepository
-import lakho.ecommerce.webservices.event.repositories.entities.EventStatus
-import lakho.ecommerce.webservices.event.services.EventService
+import lakho.ecommerce.webservices.common.repositories.EventRepository
+import lakho.ecommerce.webservices.common.repositories.entities.EventStatus
+import lakho.ecommerce.webservices.common.services.EventService
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach

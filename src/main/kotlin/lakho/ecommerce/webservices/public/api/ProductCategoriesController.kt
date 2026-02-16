@@ -1,8 +1,8 @@
 package lakho.ecommerce.webservices.public.api
 
 import lakho.ecommerce.webservices.common.CustomPage
-import lakho.ecommerce.webservices.storeowner.repositories.entities.ProductCategory
-import lakho.ecommerce.webservices.storeowner.services.CategoryService
+import lakho.ecommerce.webservices.common.repositories.entities.ProductCategory
+import lakho.ecommerce.webservices.common.services.CategoryService
 import org.springframework.data.domain.PageRequest
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*

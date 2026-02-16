@@ -1,9 +1,10 @@
 package lakho.ecommerce.webservices.event.services
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import lakho.ecommerce.webservices.event.repositories.EventRepository
-import lakho.ecommerce.webservices.event.repositories.entities.Event
-import lakho.ecommerce.webservices.event.repositories.entities.EventStatus
+import lakho.ecommerce.webservices.common.repositories.EventRepository
+import lakho.ecommerce.webservices.common.repositories.entities.Event
+import lakho.ecommerce.webservices.common.repositories.entities.EventStatus
+import lakho.ecommerce.webservices.common.services.EventService
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -13,7 +14,6 @@ import org.mockito.Mockito.*
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.junit.jupiter.MockitoSettings
 import org.mockito.kotlin.any
-import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.whenever
 import org.mockito.quality.Strictness

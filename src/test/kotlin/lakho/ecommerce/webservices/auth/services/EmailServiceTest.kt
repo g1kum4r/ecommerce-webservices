@@ -9,6 +9,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.mail.javamail.JavaMailSender
 import jakarta.mail.internet.MimeMessage
+import lakho.ecommerce.webservices.common.services.EmailService
 import org.mockito.kotlin.argumentCaptor
 
 class EmailServiceTest {

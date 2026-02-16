@@ -4,7 +4,7 @@ import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
-import lakho.ecommerce.webservices.user.Roles
+import lakho.ecommerce.webservices.common.enums.Roles
 
 data class RegisterRequest(
     @field:NotBlank(message = "Email is required")

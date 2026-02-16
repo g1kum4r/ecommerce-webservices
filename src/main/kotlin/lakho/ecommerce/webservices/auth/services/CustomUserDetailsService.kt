@@ -1,7 +1,7 @@
 package lakho.ecommerce.webservices.auth.services
 
-import lakho.ecommerce.webservices.user.repositories.UserRepository
-import lakho.ecommerce.webservices.user.services.UserRoleCacheService
+import lakho.ecommerce.webservices.common.repositories.UserRepository
+import lakho.ecommerce.webservices.common.services.UserRoleCacheService
 import lombok.extern.slf4j.Slf4j
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory

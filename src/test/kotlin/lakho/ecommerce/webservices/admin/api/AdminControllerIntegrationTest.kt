@@ -3,8 +3,8 @@ package lakho.ecommerce.webservices.admin.api
 import com.fasterxml.jackson.databind.ObjectMapper
 import lakho.ecommerce.webservices.auth.api.models.LoginRequest
 import lakho.ecommerce.webservices.auth.api.models.RegisterRequest
-import lakho.ecommerce.webservices.auth.services.EmailService
-import lakho.ecommerce.webservices.user.Roles
+import lakho.ecommerce.webservices.common.services.EmailService
+import lakho.ecommerce.webservices.common.enums.Roles
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any

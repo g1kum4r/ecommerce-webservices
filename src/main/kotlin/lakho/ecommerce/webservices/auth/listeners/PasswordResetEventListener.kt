@@ -1,8 +1,8 @@
 package lakho.ecommerce.webservices.auth.listeners
 
-import lakho.ecommerce.webservices.auth.services.EmailService
+import lakho.ecommerce.webservices.common.services.EmailService
 import lakho.ecommerce.webservices.auth.events.PasswordResetEvent
-import lakho.ecommerce.webservices.event.services.EventService
+import lakho.ecommerce.webservices.common.services.EventService
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component

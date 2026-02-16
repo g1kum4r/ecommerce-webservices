@@ -1,12 +1,15 @@
 package lakho.ecommerce.webservices.user.services
 
-import lakho.ecommerce.webservices.user.Roles
-import lakho.ecommerce.webservices.user.repositories.RoleRepository
-import lakho.ecommerce.webservices.user.repositories.UserRepository
-import lakho.ecommerce.webservices.user.repositories.UserRoleRepository
-import lakho.ecommerce.webservices.user.repositories.entities.Role
-import lakho.ecommerce.webservices.user.repositories.entities.User
-import lakho.ecommerce.webservices.user.repositories.entities.UserRole
+import lakho.ecommerce.webservices.common.enums.Roles
+import lakho.ecommerce.webservices.common.repositories.RoleRepository
+import lakho.ecommerce.webservices.common.repositories.UserRepository
+import lakho.ecommerce.webservices.common.repositories.UserRoleRepository
+import lakho.ecommerce.webservices.common.repositories.entities.Role
+import lakho.ecommerce.webservices.common.repositories.entities.User
+import lakho.ecommerce.webservices.common.repositories.entities.UserRole
+import lakho.ecommerce.webservices.common.services.UserDataCacheService
+import lakho.ecommerce.webservices.common.services.UserRoleCacheService
+import lakho.ecommerce.webservices.common.services.UserService
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test

@@ -3,9 +3,13 @@ package lakho.ecommerce.webservices.auth.services
 import lakho.ecommerce.webservices.auth.api.models.LoginRequest
 import lakho.ecommerce.webservices.auth.api.models.RefreshRequest
 import lakho.ecommerce.webservices.auth.api.models.RegisterRequest
-import lakho.ecommerce.webservices.user.Roles
-import lakho.ecommerce.webservices.user.repositories.entities.User
-import lakho.ecommerce.webservices.user.services.UserService
+import lakho.ecommerce.webservices.common.repositories.entities.Role
+import lakho.ecommerce.webservices.common.enums.Roles
+import lakho.ecommerce.webservices.common.repositories.entities.User
+import lakho.ecommerce.webservices.common.repositories.models.SecureUser
+import lakho.ecommerce.webservices.common.services.EmailService
+import lakho.ecommerce.webservices.common.services.UserDataCacheService
+import lakho.ecommerce.webservices.common.services.UserService
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.BeforeEach
@@ -26,7 +30,7 @@ class AuthServiceTest {
     private lateinit var passwordEncoder: PasswordEncoder
     private lateinit var authenticationManager: AuthenticationManager
     private lateinit var jwtTokenCacheService: JwtTokenCacheService
-    private lateinit var userDataCacheService: lakho.ecommerce.webservices.user.services.UserDataCacheService
+    private lateinit var userDataCacheService: UserDataCacheService
     private lateinit var authService: AuthService
 
     @BeforeEach
@@ -36,7 +40,7 @@ class AuthServiceTest {
         passwordEncoder = mock(PasswordEncoder::class.java)
         authenticationManager = mock(AuthenticationManager::class.java)
         jwtTokenCacheService = mock(JwtTokenCacheService::class.java)
-        userDataCacheService = mock(lakho.ecommerce.webservices.user.services.UserDataCacheService::class.java)
+        userDataCacheService = mock(UserDataCacheService::class.java)
         authService = AuthService(
             userService,
             jwtService,
@@ -64,7 +68,7 @@ class AuthServiceTest {
             username = request.email,
             passwordHash = encodedPassword
         )
-        val savedUser = lakho.ecommerce.webservices.user.repositories.models.User(
+        val savedUser = lakho.ecommerce.webservices.common.repositories.models.User(
             id = UUID.randomUUID(),
             email = request.email,
             username = request.email,
@@ -74,7 +78,7 @@ class AuthServiceTest {
             accountLocked = false,
             credentialsExpired = false,
             enabled = true,
-            roles = setOf(lakho.ecommerce.webservices.user.repositories.entities.Role(1, "CONSUMER"))
+            roles = setOf(Role(1, "CONSUMER"))
         )
         val accessToken = "accessToken"
         val refreshToken = "refreshToken"
@@ -138,7 +142,7 @@ class AuthServiceTest {
             email = "test@example.com",
             password = "P@ssw0rd123"
         )
-        val user = lakho.ecommerce.webservices.user.repositories.models.User(
+        val user = lakho.ecommerce.webservices.common.repositories.models.User(
             id = UUID.randomUUID(),
             email = request.email,
             username = request.email,
@@ -148,7 +152,7 @@ class AuthServiceTest {
             accountLocked = false,
             credentialsExpired = false,
             enabled = true,
-            roles = setOf(lakho.ecommerce.webservices.user.repositories.entities.Role(1, "CONSUMER"))
+            roles = setOf(Role(1, "CONSUMER"))
         )
         val accessToken = "accessToken"
         val refreshToken = "refreshToken"
@@ -192,7 +196,7 @@ class AuthServiceTest {
             email = "test@example.com",
             password = "wrongpassword"
         )
-        val user = lakho.ecommerce.webservices.user.repositories.models.User(
+        val user = lakho.ecommerce.webservices.common.repositories.models.User(
             id = UUID.randomUUID(),
             email = request.email,
             username = request.email,
@@ -202,7 +206,7 @@ class AuthServiceTest {
             accountLocked = false,
             credentialsExpired = false,
             enabled = true,
-            roles = setOf(lakho.ecommerce.webservices.user.repositories.entities.Role(1, "CONSUMER"))
+            roles = setOf(Role(1, "CONSUMER"))
         )
 
         `when`(userService.findByEmailOrUsername(request.email)).thenReturn(user)
@@ -220,7 +224,7 @@ class AuthServiceTest {
         val refreshToken = "validRefreshToken"
         val request = RefreshRequest(refreshToken = refreshToken)
         val email = "test@example.com"
-        val secureUser = lakho.ecommerce.webservices.user.repositories.models.SecureUser(
+        val secureUser = SecureUser(
             id = UUID.randomUUID(),
             email = email,
             username = email,
@@ -231,7 +235,7 @@ class AuthServiceTest {
             accountLocked = false,
             credentialsExpired = false,
             enabled = true,
-            roles = setOf(lakho.ecommerce.webservices.user.repositories.entities.Role(1, "CONSUMER"))
+            roles = setOf(Role(1, "CONSUMER"))
         )
         val newAccessToken = "newAccessToken"
         val newRefreshToken = "newRefreshToken"

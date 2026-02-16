@@ -1,6 +1,6 @@
 package lakho.ecommerce.webservices.auth.events
 
-import lakho.ecommerce.webservices.user.repositories.models.User
+import lakho.ecommerce.webservices.common.repositories.models.User
 import org.springframework.context.ApplicationEvent
 
 /**

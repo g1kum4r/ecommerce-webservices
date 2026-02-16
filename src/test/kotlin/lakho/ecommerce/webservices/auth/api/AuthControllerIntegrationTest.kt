@@ -9,8 +9,8 @@ import lakho.ecommerce.webservices.auth.api.models.ResetPasswordRequest
 import lakho.ecommerce.webservices.auth.api.models.VerifyEmailRequest
 import lakho.ecommerce.webservices.auth.repositories.EmailVerificationTokenRepository
 import lakho.ecommerce.webservices.auth.repositories.PasswordResetTokenRepository
-import lakho.ecommerce.webservices.auth.services.EmailService
-import lakho.ecommerce.webservices.user.Roles
+import lakho.ecommerce.webservices.common.services.EmailService
+import lakho.ecommerce.webservices.common.enums.Roles
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any

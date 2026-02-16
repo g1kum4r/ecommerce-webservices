@@ -1,16 +1,15 @@
 package lakho.ecommerce.webservices.admin.services
 
-import lakho.ecommerce.webservices.user.Roles
-import lakho.ecommerce.webservices.user.repositories.entities.Role
-import lakho.ecommerce.webservices.user.repositories.models.User
-import lakho.ecommerce.webservices.user.services.UserService
+import lakho.ecommerce.webservices.common.enums.Roles
+import lakho.ecommerce.webservices.common.repositories.entities.Role
+import lakho.ecommerce.webservices.common.repositories.models.User
+import lakho.ecommerce.webservices.common.services.UserService
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.*
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
-import java.time.Instant
 import java.util.*
 
 class AdminServiceTest {

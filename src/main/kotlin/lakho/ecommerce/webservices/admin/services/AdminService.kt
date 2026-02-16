@@ -1,9 +1,8 @@
 package lakho.ecommerce.webservices.admin.services
 
 import lakho.ecommerce.webservices.admin.api.models.UserSummary
-import lakho.ecommerce.webservices.user.Roles
-import lakho.ecommerce.webservices.user.repositories.entities.UserRole
-import lakho.ecommerce.webservices.user.services.UserService
+import lakho.ecommerce.webservices.common.enums.Roles
+import lakho.ecommerce.webservices.common.services.UserService
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service

@@ -1,11 +1,11 @@
 package lakho.ecommerce.webservices.public.api
 
-import lakho.ecommerce.webservices.public.services.AddressService
+import lakho.ecommerce.webservices.common.services.AddressService
 import lakho.ecommerce.webservices.common.CustomPage
-import lakho.ecommerce.webservices.public.repositories.entities.City
-import lakho.ecommerce.webservices.public.repositories.entities.Country
-import lakho.ecommerce.webservices.public.repositories.entities.Region
-import lakho.ecommerce.webservices.public.repositories.entities.State
+import lakho.ecommerce.webservices.common.repositories.entities.City
+import lakho.ecommerce.webservices.common.repositories.entities.Country
+import lakho.ecommerce.webservices.common.repositories.entities.Region
+import lakho.ecommerce.webservices.common.repositories.entities.State
 import org.springframework.data.domain.PageRequest
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*

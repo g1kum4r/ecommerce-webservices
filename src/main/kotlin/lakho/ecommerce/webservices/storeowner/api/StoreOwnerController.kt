@@ -7,7 +7,7 @@ import lakho.ecommerce.webservices.storeowner.api.models.UpdateStoreRequest
 import lakho.ecommerce.webservices.storeowner.repositories.entities.Store
 import lakho.ecommerce.webservices.storeowner.services.StoreManagementService
 import lakho.ecommerce.webservices.storeowner.services.StoreService
-import lakho.ecommerce.webservices.user.services.UserService
+import lakho.ecommerce.webservices.common.services.UserService
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.http.HttpStatus

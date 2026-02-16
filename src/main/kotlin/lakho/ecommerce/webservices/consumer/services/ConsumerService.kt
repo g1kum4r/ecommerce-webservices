@@ -1,7 +1,7 @@
 package lakho.ecommerce.webservices.consumer.services
 
 import lakho.ecommerce.webservices.consumer.api.models.ConsumerProfile
-import lakho.ecommerce.webservices.user.services.UserService
+import lakho.ecommerce.webservices.common.services.UserService
 import org.springframework.stereotype.Service
 
 @Service

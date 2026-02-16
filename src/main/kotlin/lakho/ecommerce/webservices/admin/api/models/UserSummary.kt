@@ -1,8 +1,6 @@
 package lakho.ecommerce.webservices.admin.api.models
 
-import lakho.ecommerce.webservices.user.Roles
-import lakho.ecommerce.webservices.user.repositories.entities.Role
-import lakho.ecommerce.webservices.user.repositories.entities.UserRole
+import lakho.ecommerce.webservices.common.repositories.entities.Role
 import java.util.UUID
 
 data class UserSummary(

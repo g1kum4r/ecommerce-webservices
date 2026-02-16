@@ -7,11 +7,12 @@ import lakho.ecommerce.webservices.auth.api.models.RegisterRequest
 import lakho.ecommerce.webservices.auth.events.LoginSuccessEvent
 import lakho.ecommerce.webservices.auth.events.PasswordResetEvent
 import lakho.ecommerce.webservices.auth.events.UserRegisteredEvent
-import lakho.ecommerce.webservices.user.Roles
-import lakho.ecommerce.webservices.user.repositories.models.User
-import lakho.ecommerce.webservices.user.repositories.models.toUserModel
-import lakho.ecommerce.webservices.user.services.UserDataCacheService
-import lakho.ecommerce.webservices.user.services.UserService
+import lakho.ecommerce.webservices.common.enums.Roles
+import lakho.ecommerce.webservices.common.repositories.models.User
+import lakho.ecommerce.webservices.common.repositories.models.toUserModel
+import lakho.ecommerce.webservices.common.services.EmailService
+import lakho.ecommerce.webservices.common.services.UserDataCacheService
+import lakho.ecommerce.webservices.common.services.UserService
 import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.security.authentication.AuthenticationManager
@@ -46,7 +47,7 @@ internal class AuthService(
             ?: throw IllegalStateException("Password encoding failed")
 
         val user = userService.save(
-            lakho.ecommerce.webservices.user.repositories.entities.User(
+            lakho.ecommerce.webservices.common.repositories.entities.User(
                 email = request.email,
                 username = request.email,
                 passwordHash = encodedPassword

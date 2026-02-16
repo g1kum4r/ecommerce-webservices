@@ -2,8 +2,8 @@ package lakho.ecommerce.webservices.auth.listeners
 
 import lakho.ecommerce.webservices.auth.events.LoginSuccessEvent
 import lakho.ecommerce.webservices.auth.services.JwtTokenCacheService
-import lakho.ecommerce.webservices.user.services.CachedUserData
-import lakho.ecommerce.webservices.user.services.UserDataCacheService
+import lakho.ecommerce.webservices.common.services.CachedUserData
+import lakho.ecommerce.webservices.common.services.UserDataCacheService
 import org.slf4j.LoggerFactory
 import org.springframework.context.event.EventListener
 import org.springframework.scheduling.annotation.Async
