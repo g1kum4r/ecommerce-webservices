@@ -1,8 +1,8 @@
 package lakho.ecommerce.webservices.public.api
 
+import lakho.ecommerce.webservices.common.CustomPage
 import lakho.ecommerce.webservices.storeowner.repositories.entities.ProductCategory
 import lakho.ecommerce.webservices.storeowner.services.CategoryService
-import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -17,7 +17,7 @@ class ProductCategoriesController(private val categoryService: CategoryService) 
         @RequestParam(defaultValue = "20") size: Int,
         @RequestParam(required = false) search: String?,
         @RequestParam(defaultValue = "false") rootOnly: Boolean
-    ): ResponseEntity<Page<ProductCategory>> {
+    ): ResponseEntity<CustomPage<ProductCategory>> {
         val pageable = PageRequest.of(page, size)
 
         val categories = when {
@@ -48,7 +48,7 @@ class ProductCategoriesController(private val categoryService: CategoryService) 
         @PathVariable id: Long,
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "20") size: Int
-    ): ResponseEntity<Page<ProductCategory>> {
+    ): ResponseEntity<CustomPage<ProductCategory>> {
         val pageable = PageRequest.of(page, size)
         val children = categoryService.getProductCategoryChildren(id, pageable)
         return ResponseEntity.ok(children)

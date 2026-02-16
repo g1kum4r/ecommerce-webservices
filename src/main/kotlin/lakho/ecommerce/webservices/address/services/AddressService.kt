@@ -2,7 +2,7 @@ package lakho.ecommerce.webservices.address.services
 
 import lakho.ecommerce.webservices.address.repositories.*
 import lakho.ecommerce.webservices.address.repositories.entities.*
-import org.springframework.data.domain.Page
+import lakho.ecommerce.webservices.common.CustomPage
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 
@@ -16,8 +16,11 @@ class AddressService(
 ) {
 
     // Region operations
-    fun getAllRegions(pageable: Pageable): Page<Region> {
-        return regionRepository.findAllActive(pageable)
+    fun getAllRegions(pageable: Pageable): CustomPage<Region> {
+        val offset = pageable.pageNumber * pageable.pageSize.toLong()
+        val content = regionRepository.findAllActive(pageable.pageSize, offset)
+        val totalElements = regionRepository.countAllActive()
+        return CustomPage.of(content, totalElements, pageable.pageNumber, pageable.pageSize)
     }
 
     fun getRegionById(id: Long): Region? {
@@ -28,17 +31,26 @@ class AddressService(
         return regionRepository.findByCode(code)
     }
 
-    fun searchRegions(search: String, pageable: Pageable): Page<Region> {
-        return regionRepository.searchByNameOrCode(search, pageable)
+    fun searchRegions(search: String, pageable: Pageable): CustomPage<Region> {
+        val offset = pageable.pageNumber * pageable.pageSize.toLong()
+        val content = regionRepository.searchByNameOrCode(search, pageable.pageSize, offset)
+        val totalElements = regionRepository.countSearchByNameOrCode(search)
+        return CustomPage.of(content, totalElements, pageable.pageNumber, pageable.pageSize)
     }
 
     // Country operations
-    fun getAllCountries(pageable: Pageable): Page<Country> {
-        return countryRepository.findAllActive(pageable)
+    fun getAllCountries(pageable: Pageable): CustomPage<Country> {
+        val offset = pageable.pageNumber * pageable.pageSize.toLong()
+        val content = countryRepository.findAllActive(pageable.pageSize, offset)
+        val totalElements = countryRepository.countAllActive()
+        return CustomPage.of(content, totalElements, pageable.pageNumber, pageable.pageSize)
     }
 
-    fun getCountriesByRegion(regionId: Long, pageable: Pageable): Page<Country> {
-        return countryRepository.findByRegionId(regionId, pageable)
+    fun getCountriesByRegion(regionId: Long, pageable: Pageable): CustomPage<Country> {
+        val offset = pageable.pageNumber * pageable.pageSize.toLong()
+        val content = countryRepository.findByRegionId(regionId, pageable.pageSize, offset)
+        val totalElements = countryRepository.countByRegionId(regionId)
+        return CustomPage.of(content, totalElements, pageable.pageNumber, pageable.pageSize)
     }
 
     fun getCountryById(id: Long): Country? {
@@ -53,46 +65,70 @@ class AddressService(
         return countryRepository.findByIso3(iso3)
     }
 
-    fun searchCountries(search: String, pageable: Pageable): Page<Country> {
-        return countryRepository.searchByNameOrCode(search, pageable)
+    fun searchCountries(search: String, pageable: Pageable): CustomPage<Country> {
+        val offset = pageable.pageNumber * pageable.pageSize.toLong()
+        val content = countryRepository.searchByNameOrCode(search, pageable.pageSize, offset)
+        val totalElements = countryRepository.countSearchByNameOrCode(search)
+        return CustomPage.of(content, totalElements, pageable.pageNumber, pageable.pageSize)
     }
 
     // State operations
-    fun getAllStates(pageable: Pageable): Page<State> {
-        return stateRepository.findAllActive(pageable)
+    fun getAllStates(pageable: Pageable): CustomPage<State> {
+        val offset = pageable.pageNumber * pageable.pageSize.toLong()
+        val content = stateRepository.findAllActive(pageable.pageSize, offset)
+        val totalElements = stateRepository.countAllActive()
+        return CustomPage.of(content, totalElements, pageable.pageNumber, pageable.pageSize)
     }
 
-    fun getStatesByCountry(countryId: Long, pageable: Pageable): Page<State> {
-        return stateRepository.findByCountryId(countryId, pageable)
+    fun getStatesByCountry(countryId: Long, pageable: Pageable): CustomPage<State> {
+        val offset = pageable.pageNumber * pageable.pageSize.toLong()
+        val content = stateRepository.findByCountryId(countryId, pageable.pageSize, offset)
+        val totalElements = stateRepository.countByCountryId(countryId)
+        return CustomPage.of(content, totalElements, pageable.pageNumber, pageable.pageSize)
     }
 
     fun getStateById(id: Long): State? {
         return stateRepository.findById(id).orElse(null)
     }
 
-    fun searchStates(search: String, pageable: Pageable): Page<State> {
-        return stateRepository.searchByNameOrCode(search, pageable)
+    fun searchStates(search: String, pageable: Pageable): CustomPage<State> {
+        val offset = pageable.pageNumber * pageable.pageSize.toLong()
+        val content = stateRepository.searchByNameOrCode(search, pageable.pageSize, offset)
+        val totalElements = stateRepository.countSearchByNameOrCode(search)
+        return CustomPage.of(content, totalElements, pageable.pageNumber, pageable.pageSize)
     }
 
     // City operations
-    fun getAllCities(pageable: Pageable): Page<City> {
-        return cityRepository.findAllActive(pageable)
+    fun getAllCities(pageable: Pageable): CustomPage<City> {
+        val offset = pageable.pageNumber * pageable.pageSize.toLong()
+        val content = cityRepository.findAllActive(pageable.pageSize, offset)
+        val totalElements = cityRepository.countAllActive()
+        return CustomPage.of(content, totalElements, pageable.pageNumber, pageable.pageSize)
     }
 
-    fun getCitiesByState(stateId: Long, pageable: Pageable): Page<City> {
-        return cityRepository.findByStateId(stateId, pageable)
+    fun getCitiesByState(stateId: Long, pageable: Pageable): CustomPage<City> {
+        val offset = pageable.pageNumber * pageable.pageSize.toLong()
+        val content = cityRepository.findByStateId(stateId, pageable.pageSize, offset)
+        val totalElements = cityRepository.countByStateId(stateId)
+        return CustomPage.of(content, totalElements, pageable.pageNumber, pageable.pageSize)
     }
 
     fun getCityById(id: Long): City? {
         return cityRepository.findById(id).orElse(null)
     }
 
-    fun searchCities(search: String, pageable: Pageable): Page<City> {
-        return cityRepository.searchByName(search, pageable)
+    fun searchCities(search: String, pageable: Pageable): CustomPage<City> {
+        val offset = pageable.pageNumber * pageable.pageSize.toLong()
+        val content = cityRepository.searchByName(search, pageable.pageSize, offset)
+        val totalElements = cityRepository.countSearchByName(search)
+        return CustomPage.of(content, totalElements, pageable.pageNumber, pageable.pageSize)
     }
 
     // Address operations
-    fun getAddressesByCity(cityId: Long, pageable: Pageable): Page<Address> {
-        return addressRepository.findByCityId(cityId, pageable)
+    fun getAddressesByCity(cityId: Long, pageable: Pageable): CustomPage<Address> {
+        val offset = pageable.pageNumber * pageable.pageSize.toLong()
+        val content = addressRepository.findByCityId(cityId, pageable.pageSize, offset)
+        val totalElements = addressRepository.countByCityId(cityId)
+        return CustomPage.of(content, totalElements, pageable.pageNumber, pageable.pageSize)
     }
 }

@@ -2,7 +2,7 @@ package lakho.ecommerce.webservices.public.api
 
 import lakho.ecommerce.webservices.address.repositories.entities.*
 import lakho.ecommerce.webservices.address.services.AddressService
-import org.springframework.data.domain.Page
+import lakho.ecommerce.webservices.common.CustomPage
 import org.springframework.data.domain.PageRequest
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -17,7 +17,7 @@ class AddressController(private val addressService: AddressService) {
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "20") size: Int,
         @RequestParam(required = false) search: String?
-    ): ResponseEntity<Page<Region>> {
+    ): ResponseEntity<CustomPage<Region>> {
         val pageable = PageRequest.of(page, size)
         val result = if (search.isNullOrBlank()) {
             addressService.getAllRegions(pageable)
@@ -48,7 +48,7 @@ class AddressController(private val addressService: AddressService) {
         @RequestParam(defaultValue = "20") size: Int,
         @RequestParam(required = false) regionId: Long?,
         @RequestParam(required = false) search: String?
-    ): ResponseEntity<Page<Country>> {
+    ): ResponseEntity<CustomPage<Country>> {
         val pageable = PageRequest.of(page, size)
         val result = when {
             !search.isNullOrBlank() -> addressService.searchCountries(search, pageable)
@@ -86,7 +86,7 @@ class AddressController(private val addressService: AddressService) {
         @RequestParam(defaultValue = "20") size: Int,
         @RequestParam(required = false) countryId: Long?,
         @RequestParam(required = false) search: String?
-    ): ResponseEntity<Page<State>> {
+    ): ResponseEntity<CustomPage<State>> {
         val pageable = PageRequest.of(page, size)
         val result = when {
             !search.isNullOrBlank() -> addressService.searchStates(search, pageable)
@@ -110,7 +110,7 @@ class AddressController(private val addressService: AddressService) {
         @RequestParam(defaultValue = "20") size: Int,
         @RequestParam(required = false) stateId: Long?,
         @RequestParam(required = false) search: String?
-    ): ResponseEntity<Page<City>> {
+    ): ResponseEntity<CustomPage<City>> {
         val pageable = PageRequest.of(page, size)
         val result = when {
             !search.isNullOrBlank() -> addressService.searchCities(search, pageable)

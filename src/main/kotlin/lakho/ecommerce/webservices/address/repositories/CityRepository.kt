@@ -1,22 +1,28 @@
 package lakho.ecommerce.webservices.address.repositories
 
 import lakho.ecommerce.webservices.address.repositories.entities.City
-import org.springframework.data.domain.Page
-import org.springframework.data.domain.Pageable
 import org.springframework.data.jdbc.repository.query.Query
 import org.springframework.data.repository.CrudRepository
-import org.springframework.data.repository.PagingAndSortingRepository
 import org.springframework.stereotype.Repository
 
 @Repository
-interface CityRepository : CrudRepository<City, Long>, PagingAndSortingRepository<City, Long> {
+interface CityRepository : CrudRepository<City, Long> {
 
-    @Query("SELECT * FROM cities WHERE is_active = true AND state_id = :stateId")
-    fun findByStateId(stateId: Long, pageable: Pageable): Page<City>
+    @Query("SELECT * FROM cities WHERE is_active = true AND state_id = :stateId LIMIT :limit OFFSET :offset")
+    fun findByStateId(stateId: Long, limit: Int, offset: Long): List<City>
 
-    @Query("SELECT * FROM cities WHERE is_active = true")
-    fun findAllActive(pageable: Pageable): Page<City>
+    @Query("SELECT COUNT(*) FROM cities WHERE is_active = true AND state_id = :stateId")
+    fun countByStateId(stateId: Long): Long
 
-    @Query("SELECT * FROM cities WHERE is_active = true AND name ILIKE CONCAT('%', :search, '%')")
-    fun searchByName(search: String, pageable: Pageable): Page<City>
+    @Query("SELECT * FROM cities WHERE is_active = true LIMIT :limit OFFSET :offset")
+    fun findAllActive(limit: Int, offset: Long): List<City>
+
+    @Query("SELECT COUNT(*) FROM cities WHERE is_active = true")
+    fun countAllActive(): Long
+
+    @Query("SELECT * FROM cities WHERE is_active = true AND name ILIKE CONCAT('%', :search, '%') LIMIT :limit OFFSET :offset")
+    fun searchByName(search: String, limit: Int, offset: Long): List<City>
+
+    @Query("SELECT COUNT(*) FROM cities WHERE is_active = true AND name ILIKE CONCAT('%', :search, '%')")
+    fun countSearchByName(search: String): Long
 }
