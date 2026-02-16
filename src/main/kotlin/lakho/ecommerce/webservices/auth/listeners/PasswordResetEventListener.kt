@@ -1,7 +1,7 @@
-package lakho.ecommerce.webservices.event.listeners
+package lakho.ecommerce.webservices.auth.listeners
 
 import lakho.ecommerce.webservices.auth.services.EmailService
-import lakho.ecommerce.webservices.event.events.UserRegisteredEvent
+import lakho.ecommerce.webservices.auth.events.PasswordResetEvent
 import lakho.ecommerce.webservices.event.services.EventService
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Async
@@ -10,21 +10,21 @@ import org.springframework.transaction.event.TransactionPhase
 import org.springframework.transaction.event.TransactionalEventListener
 
 /**
- * Listener for UserRegisteredEvent.
- * Sends verification email when a new user registers.
+ * Listener for PasswordResetEvent.
+ * Sends confirmation email when a user successfully resets their password.
  */
 @Component
-class UserRegisteredEventListener(
+class PasswordResetEventListener(
     private val emailService: EmailService,
     private val eventService: EventService
 ) {
-    private val logger = LoggerFactory.getLogger(UserRegisteredEventListener::class.java)
+    private val logger = LoggerFactory.getLogger(PasswordResetEventListener::class.java)
 
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    fun handleUserRegisteredEvent(event: UserRegisteredEvent) {
+    fun handlePasswordResetEvent(event: PasswordResetEvent) {
         logger.info(
-            "Handling UserRegisteredEvent: eventId={}, userId={}, email={}",
+            "Handling PasswordResetEvent: eventId={}, userId={}, email={}",
             event.eventId,
             event.userId,
             event.email
@@ -41,20 +41,20 @@ class UserRegisteredEventListener(
             // Mark as processing
             eventService.markAsProcessing(savedEvent.id)
 
-            // Send verification email
-            emailService.sendVerificationEmail(event.email, event.username, event.verificationToken)
+            // Send password reset confirmation email
+            emailService.sendPasswordResetConfirmationEmail(event.email, event.username)
 
             // Mark as completed and remove from cache
             eventService.markAsCompleted(savedEvent.id)
 
             logger.info(
-                "Verification email sent successfully: eventId={}, userId={}",
+                "Password reset confirmation email sent successfully: eventId={}, userId={}",
                 savedEvent.id,
                 event.userId
             )
         } catch (e: Exception) {
             logger.error(
-                "Failed to send verification email: eventId={}, userId={}",
+                "Failed to send password reset confirmation email: eventId={}, userId={}",
                 savedEvent.id,
                 event.userId,
                 e

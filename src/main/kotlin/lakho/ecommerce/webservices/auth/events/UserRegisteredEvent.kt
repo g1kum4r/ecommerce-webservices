@@ -1,5 +1,7 @@
-package lakho.ecommerce.webservices.event.events
+package lakho.ecommerce.webservices.auth.events
 
+import lakho.ecommerce.webservices.event.events.EmailTemplate
+import lakho.ecommerce.webservices.event.events.SendEmailEvent
 import java.time.Instant
 import java.util.*
 

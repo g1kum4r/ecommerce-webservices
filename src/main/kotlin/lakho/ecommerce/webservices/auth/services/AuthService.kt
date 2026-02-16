@@ -5,8 +5,8 @@ import lakho.ecommerce.webservices.auth.api.models.LoginRequest
 import lakho.ecommerce.webservices.auth.api.models.RefreshRequest
 import lakho.ecommerce.webservices.auth.api.models.RegisterRequest
 import lakho.ecommerce.webservices.auth.events.LoginSuccessEvent
-import lakho.ecommerce.webservices.event.events.PasswordResetEvent
-import lakho.ecommerce.webservices.event.events.UserRegisteredEvent
+import lakho.ecommerce.webservices.auth.events.PasswordResetEvent
+import lakho.ecommerce.webservices.auth.events.UserRegisteredEvent
 import lakho.ecommerce.webservices.user.Roles
 import lakho.ecommerce.webservices.user.repositories.models.User
 import lakho.ecommerce.webservices.user.repositories.models.toUserModel

@@ -1,8 +1,8 @@
 package lakho.ecommerce.webservices.event.listeners
 
 import lakho.ecommerce.webservices.auth.services.EmailService
-import lakho.ecommerce.webservices.event.events.PasswordResetEvent
-import lakho.ecommerce.webservices.event.events.UserRegisteredEvent
+import lakho.ecommerce.webservices.auth.events.PasswordResetEvent
+import lakho.ecommerce.webservices.auth.events.UserRegisteredEvent
 import lakho.ecommerce.webservices.event.repositories.EventRepository
 import lakho.ecommerce.webservices.event.repositories.entities.EventStatus
 import lakho.ecommerce.webservices.event.services.EventService
