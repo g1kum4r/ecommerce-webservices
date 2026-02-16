@@ -1,15 +1,14 @@
-package lakho.ecommerce.webservices.address.repositories.entities
+package lakho.ecommerce.webservices.public.repositories.entities
 
 import org.springframework.data.annotation.Id
 import org.springframework.data.relational.core.mapping.Table
 import java.time.Instant
 
-@Table("states")
-data class State(
+@Table("regions")
+data class Region(
     @Id val id: Long? = null,
-    val countryId: Long,
     val name: String,
-    val stateCode: String? = null,
+    val code: String,
     val isActive: Boolean = true,
     val createdAt: Instant = Instant.now(),
     val updatedAt: Instant = Instant.now()

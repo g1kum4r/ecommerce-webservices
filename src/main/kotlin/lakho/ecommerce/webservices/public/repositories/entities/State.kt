@@ -1,17 +1,15 @@
-package lakho.ecommerce.webservices.address.repositories.entities
+package lakho.ecommerce.webservices.public.repositories.entities
 
 import org.springframework.data.annotation.Id
 import org.springframework.data.relational.core.mapping.Table
-import java.math.BigDecimal
 import java.time.Instant
 
-@Table("cities")
-data class City(
+@Table("states")
+data class State(
     @Id val id: Long? = null,
-    val stateId: Long,
+    val countryId: Long,
     val name: String,
-    val latitude: BigDecimal? = null,
-    val longitude: BigDecimal? = null,
+    val stateCode: String? = null,
     val isActive: Boolean = true,
     val createdAt: Instant = Instant.now(),
     val updatedAt: Instant = Instant.now()

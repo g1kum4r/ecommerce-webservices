@@ -1,4 +1,4 @@
-package lakho.ecommerce.webservices.address.repositories.entities
+package lakho.ecommerce.webservices.public.repositories.entities
 
 import org.springframework.data.annotation.Id
 import org.springframework.data.relational.core.mapping.Table

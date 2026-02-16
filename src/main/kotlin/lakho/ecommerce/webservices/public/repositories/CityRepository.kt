@@ -1,6 +1,6 @@
-package lakho.ecommerce.webservices.address.repositories
+package lakho.ecommerce.webservices.public.repositories
 
-import lakho.ecommerce.webservices.address.repositories.entities.City
+import lakho.ecommerce.webservices.public.repositories.entities.City
 import org.springframework.data.jdbc.repository.query.Query
 import org.springframework.data.repository.CrudRepository
 import org.springframework.stereotype.Repository
