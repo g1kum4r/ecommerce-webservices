@@ -1,0 +1,19 @@
+databaseChangeLog:
+  - changeSet:
+      id: "carts-table.v1"
+      author: "G1"
+      failOnError: true
+      runOnChange: true
+      changes:
+        - sqlFile:
+            path: create-carts-table.sql
+            relativeToChangelogFile: true
+  - changeSet:
+      id: "cart-items-table.v1"
+      author: "G1"
+      failOnError: true
+      runOnChange: true
+      changes:
+        - sqlFile:
+            path: create-cart-items-table.sql
+            relativeToChangelogFile: true

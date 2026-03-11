@@ -21,7 +21,7 @@ class CategoryService(
         val offset = pageable.pageNumber * pageable.pageSize.toLong()
         val content = productCategoryRepository.findByParentIdIsNull(pageable.pageSize, offset)
         val totalElements = productCategoryRepository.countByParentIdIsNull()
-        return CustomPage.Companion.of(content, totalElements, pageable.pageNumber, pageable.pageSize)
+        return CustomPage.of(content, totalElements, pageable.pageNumber, pageable.pageSize)
     }
 
     @Transactional(readOnly = true)
@@ -29,7 +29,7 @@ class CategoryService(
         val offset = pageable.pageNumber * pageable.pageSize.toLong()
         val content = productCategoryRepository.findAllRootCategories(pageable.pageSize, offset)
         val totalElements = productCategoryRepository.countAllRootCategories()
-        return CustomPage.Companion.of(content, totalElements, pageable.pageNumber, pageable.pageSize)
+        return CustomPage.of(content, totalElements, pageable.pageNumber, pageable.pageSize)
     }
 
     @Transactional(readOnly = true)
@@ -37,7 +37,7 @@ class CategoryService(
         val offset = pageable.pageNumber * pageable.pageSize.toLong()
         val content = productCategoryRepository.searchByName(search, pageable.pageSize, offset)
         val totalElements = productCategoryRepository.countSearchByName(search)
-        return CustomPage.Companion.of(content, totalElements, pageable.pageNumber, pageable.pageSize)
+        return CustomPage.of(content, totalElements, pageable.pageNumber, pageable.pageSize)
     }
 
     @Transactional(readOnly = true)
@@ -55,7 +55,7 @@ class CategoryService(
         val offset = pageable.pageNumber * pageable.pageSize.toLong()
         val content = productCategoryRepository.findByParentId(parentId, pageable.pageSize, offset)
         val totalElements = productCategoryRepository.countByParentId(parentId)
-        return CustomPage.Companion.of(content, totalElements, pageable.pageNumber, pageable.pageSize)
+        return CustomPage.of(content, totalElements, pageable.pageNumber, pageable.pageSize)
     }
 
     // Store Categories
@@ -64,7 +64,7 @@ class CategoryService(
         val offset = pageable.pageNumber * pageable.pageSize.toLong()
         val content = storeCategoryRepository.findByParentIdIsNull(pageable.pageSize, offset)
         val totalElements = storeCategoryRepository.countByParentIdIsNull()
-        return CustomPage.Companion.of(content, totalElements, pageable.pageNumber, pageable.pageSize)
+        return CustomPage.of(content, totalElements, pageable.pageNumber, pageable.pageSize)
     }
 
     @Transactional(readOnly = true)
@@ -72,7 +72,7 @@ class CategoryService(
         val offset = pageable.pageNumber * pageable.pageSize.toLong()
         val content = storeCategoryRepository.findAllRootCategories(pageable.pageSize, offset)
         val totalElements = storeCategoryRepository.countAllRootCategories()
-        return CustomPage.Companion.of(content, totalElements, pageable.pageNumber, pageable.pageSize)
+        return CustomPage.of(content, totalElements, pageable.pageNumber, pageable.pageSize)
     }
 
     @Transactional(readOnly = true)
@@ -80,7 +80,7 @@ class CategoryService(
         val offset = pageable.pageNumber * pageable.pageSize.toLong()
         val content = storeCategoryRepository.searchByName(search, pageable.pageSize, offset)
         val totalElements = storeCategoryRepository.countSearchByName(search)
-        return CustomPage.Companion.of(content, totalElements, pageable.pageNumber, pageable.pageSize)
+        return CustomPage.of(content, totalElements, pageable.pageNumber, pageable.pageSize)
     }
 
     @Transactional(readOnly = true)
@@ -98,6 +98,6 @@ class CategoryService(
         val offset = pageable.pageNumber * pageable.pageSize.toLong()
         val content = storeCategoryRepository.findByParentId(parentId, pageable.pageSize, offset)
         val totalElements = storeCategoryRepository.countByParentId(parentId)
-        return CustomPage.Companion.of(content, totalElements, pageable.pageNumber, pageable.pageSize)
+        return CustomPage.of(content, totalElements, pageable.pageNumber, pageable.pageSize)
     }
 }

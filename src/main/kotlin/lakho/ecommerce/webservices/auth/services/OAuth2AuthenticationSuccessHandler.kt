@@ -27,7 +27,7 @@ class OAuth2AuthenticationSuccessHandler(
         val email = oauth2User.getAttribute<String>("email")
             ?: throw IllegalStateException("Email not found in OAuth2 response")
 
-        val name = oauth2User.getAttribute<String>("name") ?: ""
+        oauth2User.getAttribute<String>("name") ?: ""
         val givenName = oauth2User.getAttribute<String>("given_name")
         val familyName = oauth2User.getAttribute<String>("family_name")
 
@@ -36,7 +36,7 @@ class OAuth2AuthenticationSuccessHandler(
 
         if (user == null) {
             // Register new user with CONSUMER role (OAuth2 users don't have passwords)
-            val role = roleService.findByRoleName(Roles.CONSUMER.name)
+            roleService.findByRoleName(Roles.CONSUMER.name)
             user = userService.save(
                 User(
                     email = email,
@@ -61,7 +61,7 @@ class OAuth2AuthenticationSuccessHandler(
             refreshToken
         )
 
-        setDefaultTargetUrl(redirectUrl)
+        defaultTargetUrl = redirectUrl
         super.onAuthenticationSuccess(request, response, authentication)
     }
 }

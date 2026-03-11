@@ -108,7 +108,7 @@ class EventListenersIntegrationTest {
         assertEquals(testEmail, emailFromBody)
 
         // Event should be completed and removed from cache
-        val eventById = eventService.findById(savedEvent!!.id)
+        eventService.findById(savedEvent!!.id)
         // The event is removed from cache after completion, so we check the database directly
         val dbEvent = eventRepository.findById(savedEvent.id)
         assertTrue(dbEvent.isPresent)

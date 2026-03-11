@@ -88,6 +88,28 @@ class GlobalExceptionHandler {
             .body(ErrorResponse(message = ex.message ?: "Invalid request"))
     }
 
+    @ExceptionHandler(IllegalStateException::class)
+    fun handleIllegalState(
+        ex: IllegalStateException
+    ): ResponseEntity<ErrorResponse> {
+        logger.warn("Illegal state: {}", ex.message)
+
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(ErrorResponse(message = ex.message ?: "Invalid state"))
+    }
+
+    @ExceptionHandler(IllegalAccessException::class)
+    fun handleIllegalAccess(
+        ex: IllegalAccessException
+    ): ResponseEntity<ErrorResponse> {
+        logger.warn("Illegal access: {}", ex.message)
+
+        return ResponseEntity
+            .status(HttpStatus.FORBIDDEN)
+            .body(ErrorResponse(message = ex.message ?: "Access denied"))
+    }
+
     @ExceptionHandler(HttpMessageNotReadableException::class)
     fun handleHttpMessageNotReadable(ex: HttpMessageNotReadableException): ResponseEntity<ErrorResponse> =
         ResponseEntity.badRequest().body(

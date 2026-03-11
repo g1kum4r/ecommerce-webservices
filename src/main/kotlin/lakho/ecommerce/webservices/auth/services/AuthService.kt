@@ -33,7 +33,8 @@ internal class AuthService(
     private val eventPublisher: ApplicationEventPublisher,
     private val jwtTokenCacheService: JwtTokenCacheService,
     private val userDataCacheService: UserDataCacheService,
-    private val storeOwnerProfileService: lakho.ecommerce.webservices.storeowner.services.StoreOwnerProfileService
+    private val storeOwnerProfileService: lakho.ecommerce.webservices.storeowner.services.StoreOwnerProfileService,
+    private val consumerProfileService: lakho.ecommerce.webservices.consumer.services.ConsumerProfileService
 ) {
     private val logger = LoggerFactory.getLogger(AuthService::class.java)
 
@@ -65,6 +66,16 @@ internal class AuthService(
             } catch (e: Exception) {
                 logger.error("Failed to create store owner profile: userId={}", user.id, e)
                 // Don't fail registration if profile creation fails
+            }
+        }
+
+        // Create consumer profile if user has CONSUMER role
+        if (request.roles.contains(Roles.CONSUMER)) {
+            try {
+                consumerProfileService.createProfile(user.id)
+                logger.info("Consumer profile created: userId={}", user.id)
+            } catch (e: Exception) {
+                logger.error("Failed to create consumer profile: userId={}", user.id, e)
             }
         }
 

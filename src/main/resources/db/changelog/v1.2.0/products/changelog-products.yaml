@@ -1,0 +1,30 @@
+databaseChangeLog:
+  - changeSet:
+      id: "products-tables.v1"
+      author: "G1"
+      failOnError: true
+      runOnChange: true
+      changes:
+        - sqlFile:
+            path: create-products-table.sql
+            relativeToChangelogFile: true
+
+  - changeSet:
+      id: "product-images-tables.v1"
+      author: "G1"
+      failOnError: true
+      runOnChange: true
+      changes:
+        - sqlFile:
+            path: create-product-images-table.sql
+            relativeToChangelogFile: true
+
+  - changeSet:
+      id: "product-variants-tables.v1"
+      author: "G1"
+      failOnError: true
+      runOnChange: true
+      changes:
+        - sqlFile:
+            path: create-product-variants-table.sql
+            relativeToChangelogFile: true

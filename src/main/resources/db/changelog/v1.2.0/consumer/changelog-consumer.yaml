@@ -1,0 +1,28 @@
+databaseChangeLog:
+  - changeSet:
+      id: "consumer-profiles-table.v1"
+      author: "G1"
+      failOnError: true
+      runOnChange: true
+      changes:
+        - sqlFile:
+            path: create-consumer-profiles-table.sql
+            relativeToChangelogFile: true
+  - changeSet:
+      id: "consumer-addresses-table.v1"
+      author: "G1"
+      failOnError: true
+      runOnChange: true
+      changes:
+        - sqlFile:
+            path: create-consumer-addresses-table.sql
+            relativeToChangelogFile: true
+  - changeSet:
+      id: "wishlists-table.v1"
+      author: "G1"
+      failOnError: true
+      runOnChange: true
+      changes:
+        - sqlFile:
+            path: create-wishlists-table.sql
+            relativeToChangelogFile: true
